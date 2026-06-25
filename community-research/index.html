@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+
+<!-- APEX access gate (soft, client-side) -->
+<style>
+  html.apexlock body>*:not(#apex-gate){display:none!important}
+  html.apexlock{overflow:hidden}
+  #apex-gate{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#084d2a 0%,#0b6b3a 55%,#12894b 100%);
+    font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft JhengHei",sans-serif}
+  #apex-gate .gbox{width:min(92vw,360px);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);
+    border-radius:18px;padding:34px 30px 28px;box-shadow:0 24px 60px rgba(0,0,0,.32);backdrop-filter:blur(8px);
+    text-align:center;color:#eafaf0}
+  #apex-gate .gicon{width:54px;height:54px;border-radius:50%;margin:0 auto 14px;display:flex;align-items:center;
+    justify-content:center;font-size:26px;background:#e7b53c;color:#3a2c00;font-weight:800;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+  #apex-gate h2{margin:0 0 4px;font-size:21px;font-weight:800;letter-spacing:.5px;color:#fff}
+  #apex-gate p{margin:0 0 20px;font-size:13px;color:#bfe6ce}
+  #apex-gate input{width:100%;padding:13px 15px;border-radius:10px;border:1px solid rgba(255,255,255,.25);
+    background:rgba(0,0,0,.18);color:#fff;font-size:18px;text-align:center;letter-spacing:6px;outline:none;
+    transition:border-color .15s}
+  #apex-gate input:focus{border-color:#e7b53c}
+  #apex-gate button{width:100%;margin-top:12px;padding:12px;border:none;border-radius:10px;cursor:pointer;
+    background:#e7b53c;color:#3a2c00;font-size:15px;font-weight:800;letter-spacing:1px;transition:filter .15s}
+  #apex-gate button:hover{filter:brightness(1.06)}
+  #apex-gate .ge{display:none;margin-top:12px;font-size:12.5px;color:#ffd7d2}
+  #apex-gate.bad .gbox{animation:apexshake .42s}
+  @keyframes apexshake{10%,90%{transform:translateX(-2px)}30%,70%{transform:translateX(5px)}50%{transform:translateX(-7px)}}
+</style>
+<script>
+(function(){
+  var KEY='apex_gate_v1', HASH=193354864;
+  function hf(s){var x=5381;for(var i=0;i<s.length;i++){x=(((x*33)&0xffffffff)^s.charCodeAt(i))>>>0;}return x;}
+  function ok(){try{return sessionStorage.getItem(KEY)==='1';}catch(e){return false;}}
+  if(ok())return;
+  var H=document.documentElement; H.classList.add('apexlock');
+  function build(){
+    if(document.getElementById('apex-gate'))return;
+    var o=document.createElement('div'); o.id='apex-gate';
+    o.innerHTML='<div class="gbox"><div class="gicon">&#9899;</div>'+
+      '<h2>APEX 研究中心</h2><p>請輸入通行密碼以檢視內容</p>'+
+      '<input type="password" inputmode="numeric" autocomplete="off" aria-label="password" placeholder="•••">'+
+      '<button type="button">進入</button>'+
+      '<div class="ge">密碼錯誤，請再試一次</div></div>';
+    (document.body||H).appendChild(o);
+    var inp=o.querySelector('input'), btn=o.querySelector('button'), err=o.querySelector('.ge');
+    function submit(){
+      if(hf((inp.value||'').trim())===HASH){
+        try{sessionStorage.setItem(KEY,'1');}catch(e){}
+        o.parentNode&&o.parentNode.removeChild(o); H.classList.remove('apexlock');
+      }else{
+        o.classList.add('bad'); err.style.display='block'; inp.value=''; inp.focus();
+        setTimeout(function(){o.classList.remove('bad');},460);
+      }
+    }
+    btn.addEventListener('click',submit);
+    inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();submit();}});
+    setTimeout(function(){inp.focus();},30);
+  }
+  if(document.body){build();}
+  else{document.addEventListener('DOMContentLoaded',build);
+    // also try ASAP so the overlay paints before body content
+    var t=setInterval(function(){if(document.body){clearInterval(t);build();}},8);}
+})();
+</script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>撞球社群論壇研究 · APEX</title>
+<style>
+  :root{
+    --felt:#0b6b3a; --felt-dark:#084d2a; --felt-light:#12894b;
+    --ink:#1a2230; --muted:#5b6776; --line:#e3e8ee; --bg:#f6f8fa;
+    --card:#ffffff; --accent:#e7b53c; --chalk:#2b6cb0;
+    --radius:14px; --shadow:0 1px 3px rgba(16,32,55,.06),0 8px 24px rgba(16,32,55,.06);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft JhengHei",sans-serif;
+    color:var(--ink);background:var(--bg);line-height:1.78;-webkit-font-smoothing:antialiased}
+  a{color:var(--chalk);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  #bar{position:fixed;top:0;left:0;height:3px;width:0;z-index:50;
+    background:linear-gradient(90deg,var(--accent),var(--felt-light))}
+
+  .wrap{display:grid;grid-template-columns:282px 1fr;max-width:1320px;margin:0 auto}
+  nav.side{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;
+    background:var(--felt-dark);color:#dff3e6;padding:24px 16px 40px}
+  nav.side .brand{font-weight:800;font-size:20px;color:#fff;letter-spacing:.5px}
+  nav.side .brand span{color:var(--accent)}
+  nav.side .sub{font-size:12px;color:#9fd9b8;margin:2px 0 14px}
+  nav.side .home{display:inline-flex;align-items:center;gap:6px;color:#bfe6ce;font-size:12.5px;
+    background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);padding:6px 12px;
+    border-radius:8px;margin-bottom:16px}
+  nav.side .home:hover{background:rgba(255,255,255,.14);text-decoration:none}
+  .navlist{counter-reset:nd -1}
+  .navdoc{margin:2px 0}
+  .navtop{display:flex;align-items:center;gap:10px;color:#eafaf0;padding:8px 10px;border-radius:9px;
+    font-size:14.5px;font-weight:600}
+  .navtop::before{counter-increment:nd;content:counter(nd);flex:none;width:22px;height:22px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#1a2230;
+    background:#fff;box-shadow:inset 0 -2px 4px rgba(0,0,0,.25)}
+  .navdoc:nth-child(2) .navtop::before{background:#f5c518}
+  .navdoc:nth-child(3) .navtop::before{background:#1f6fd0;color:#fff}
+  .navdoc:nth-child(4) .navtop::before{background:#d6332e;color:#fff}
+  .navtop:hover{background:rgba(255,255,255,.08);text-decoration:none}
+  .navdoc.active>.navtop{background:rgba(255,255,255,.16);color:#fff}
+  .subs{display:none;margin:2px 0 8px 32px;border-left:1px solid rgba(255,255,255,.15);padding-left:8px}
+  .navdoc.active .subs{display:block}
+  .subs a{display:block;color:#bfe6ce;font-size:13px;padding:4px 9px;border-radius:7px;margin:1px 0}
+  .subs a:hover{background:rgba(255,255,255,.07);text-decoration:none}
+  .subs a.on{background:var(--accent);color:#3a2c00;font-weight:700}
+
+  main{padding:0 0 90px;min-width:0}
+
+  header.hero{background:linear-gradient(135deg,var(--felt) 0%,var(--felt-light) 100%);
+    color:#fff;padding:56px 52px 48px;position:relative;overflow:hidden}
+  header.hero::after{content:"";position:absolute;right:-70px;top:-70px;width:300px;height:300px;
+    background:radial-gradient(circle,rgba(255,255,255,.16),transparent 70%);border-radius:50%}
+  header.hero::before{content:"";position:absolute;left:-40px;bottom:-90px;width:240px;height:240px;
+    background:radial-gradient(circle,rgba(0,0,0,.12),transparent 70%);border-radius:50%}
+  header.hero .eyebrow{font-size:13px;letter-spacing:3px;color:#bdebcf;text-transform:uppercase;font-weight:700}
+  header.hero h1{margin:8px 0 12px;font-size:34px;font-weight:800;letter-spacing:.5px;position:relative;z-index:1}
+  header.hero p{margin:0;max-width:820px;color:#e8f7ee;font-size:16px;position:relative;z-index:1}
+  .pills{margin-top:24px;display:flex;flex-wrap:wrap;gap:9px;position:relative;z-index:1}
+  .pill{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);
+    padding:6px 14px;border-radius:999px;font-size:13px;backdrop-filter:blur(4px)}
+
+  section.doc{padding:30px 52px;border-bottom:8px solid #eef1f4}
+  .rendered{max-width:880px}
+  .rendered h1{font-size:27px;color:var(--felt-dark);margin:8px 0 4px;padding-bottom:12px;
+    border-bottom:3px solid var(--felt);font-weight:800;line-height:1.35}
+  .rendered h2{font-size:21px;margin:36px 0 12px;padding-left:13px;border-left:5px solid var(--felt-light);
+    color:var(--ink);font-weight:700;line-height:1.4}
+  .rendered h3{font-size:16.5px;margin:24px 0 8px;color:var(--felt-dark);font-weight:700}
+  .rendered h4{font-size:15px;margin:16px 0 6px;color:var(--ink)}
+  .rendered p{margin:11px 0}
+  .rendered strong{color:var(--felt-dark);font-weight:700}
+  .rendered ul,.rendered ol{margin:11px 0;padding-left:24px}
+  .rendered li{margin:5px 0}
+  .rendered hr{border:none;border-top:1px dashed var(--line);margin:26px 0}
+  .rendered code{background:#eef3f0;color:#0a5a32;padding:1.5px 6px;border-radius:5px;
+    font-family:"SF Mono",Consolas,Menlo,monospace;font-size:.88em}
+
+  .rendered blockquote{margin:18px 0;background:linear-gradient(180deg,#f1f9f4,#eaf6ef);
+    border:1px solid #cfe9da;border-left:5px solid var(--felt);border-radius:12px;
+    padding:14px 20px;color:#143d29;box-shadow:var(--shadow)}
+  .rendered blockquote p{margin:6px 0}
+  .rendered blockquote strong{color:var(--felt)}
+
+  .tbl{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);background:#fff;margin:16px 0}
+  .rendered table{border-collapse:collapse;width:100%;font-size:13.6px;min-width:440px}
+  .rendered th,.rendered td{padding:10px 13px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  .rendered thead th{background:var(--felt-dark);color:#fff;font-weight:600;white-space:nowrap;position:sticky;top:0}
+  .rendered tbody tr:nth-child(even){background:#fafcfb}
+  .rendered tbody tr:hover{background:#f0f7f3}
+  .rendered td:first-child,.rendered th:first-child{white-space:nowrap}
+
+  .rendered pre{background:#0d1b14;color:#cfe9d8;padding:20px 22px;border-radius:var(--radius);
+    overflow-x:auto;box-shadow:var(--shadow);margin:18px 0}
+  .rendered pre code{background:none;color:#d3ecdd;padding:0;font-size:12.8px;line-height:1.55;
+    font-family:"SF Mono",Consolas,Menlo,monospace;white-space:pre}
+
+  .backtop{position:fixed;right:22px;bottom:22px;width:44px;height:44px;border-radius:50%;
+    background:var(--felt);color:#fff;display:none;align-items:center;justify-content:center;
+    box-shadow:var(--shadow);cursor:pointer;font-size:18px;z-index:40;border:none}
+  .backtop.show{display:flex}
+
+  @media(max-width:980px){
+    .wrap{grid-template-columns:1fr}
+    nav.side{position:static;height:auto;overflow:visible}
+    .navlist{display:flex;flex-wrap:wrap;gap:4px}
+    .navdoc{flex:1 1 auto}
+    .subs{display:none!important}
+    header.hero{padding:40px 22px}
+    section.doc{padding:26px 22px}
+  }
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div class="wrap">
+  <nav class="side">
+    <div class="brand">APEX<span>·</span>社群</div>
+    <div class="sub">撞球社群論壇研究</div>
+    <a class="home" href="../">← 返回研究中心</a>
+    <div class="navlist" id="navlist"></div>
+  </nav>
+  <main>
+    <header class="hero">
+      <div class="eyebrow">APEX COMMUNITY RESEARCH</div>
+      <h1>撞球社群論壇研究</h1>
+      <p>盤點全球三大撞球線上社群的生態結構、內容驅動力與玩家需求——<strong>台灣 PTT、英語 Reddit、中國 B站／貼吧</strong>。核心發現：三社群驅動力<strong>鏡像相反</strong>（觀眾型／玩家型／教學娛樂型），唯一共同空缺是「沒人在管理玩家的戰績與評分」——這正是 APEX 的切入點。</p>
+      <div class="pills">
+        <span class="pill">台灣 PTT · 觀眾型</span>
+        <span class="pill">英語 Reddit · 玩家型</span>
+        <span class="pill">中國 B站貼吧 · 教學型</span>
+        <span class="pill">三社群鏡像相反</span>
+        <span class="pill">玩家評分藍海</span>
+        <span class="pill">4 篇研究</span>
+      </div>
+    </header>
+<section class="doc" data-short="總覽（核心）"><script type="text/markdown" id="md-0">
+# 撞球社群論壇研究 · 總覽
+
+> 目標：盤點全球三大撞球線上社群的**生態結構、內容驅動力與玩家需求**，
+> 作為 APEX 社群平台與評分系統的設計基礎。
+> 三條主線：**台灣 PTT**（中文觀眾圈）、**英語 Reddit**（全球玩家圈）、**中國 B站／貼吧**（影音教學圈）。
+>
+> 本研究線與 `/research/`（評分系統）、`/saas-research/`（店務 SaaS）、`/tournament-research/`（賽制賽務）交會：
+> **社群是玩家黏著與內容傳播的載體，也是評分系統的需求來源與數據入口。**
+
+---
+
+## 一句話結論
+
+> 全球三大撞球社群的**驅動力彼此鏡像相反**——台灣 PTT 是「**觀眾型**」（只追賽事）、
+> 英語 Reddit 是「**玩家型**」（求助互助）、中國是「**教學娛樂型**」（看影片學球）。
+> 三者唯一的共同空缺是：**沒有任何一個社群在管理玩家自己的「戰績與評分」**——這正是 APEX 的切入點。
+
+---
+
+## 三大社群速覽
+
+| 維度 | 台灣 PTT | 英語 Reddit | 中國 B站／貼吧 |
+|------|----------|-------------|---------------|
+| **主平台型態** | 文字論壇 | 文字＋圖影論壇 | 影音彈幕 |
+| **規模** | 小（年百篇級）| 中（r/billiards 19.9 萬訂閱）| 巨大（B站億級播放）|
+| **集中度** | 單一版（高）| 單一樞紐 r/billiards | 高度分散（B站／抖音／貼吧／知乎）|
+| **核心驅動** | 賽事追蹤 | 玩家互助（求助 43%）| 教學＋娛樂 |
+| **賽事權重** | 最高（唯一焦點）| 最低（1.2%）| 中（不如娛樂教學）|
+| **明星效應** | 柯秉逸（本土）| 幾乎無 | 丁俊暉（巨星依賴）|
+| **球種焦點** | 9 球獨大 | 8 球 > 9 球，開倫有小眾 | 台球泛詞 > 斯諾克 > 中八 |
+| **開倫／三顆星** | 5 年 0 篇（隱形）| 47 篇（小眾存活）| 幾乎不見 |
+| **女子撞球** | 曇花一現 | 偶見性別話題 | 常青流量密碼 |
+| **商業化** | 弱（賣桿乏人問）| Cue Porn 炫耀 | 強（器材帶貨）|
+| **社群健康度** | 維生模式（2 人供稿 42%）| 分散式 UGC（無超級供稿人）| 冷凍（選手吧世代斷層）|
+
+---
+
+## 最關鍵發現：三社群「鏡像相反」
+
+同樣是撞球社群，三地的**內容驅動力卻完全不同**，反映三種撞球人口的入口：
+
+### 台灣 PTT＝「觀眾型」社群
+- 19 篇爆文（100 推以上）**全部是賽事轉播／情報**，無一例外。
+- 版面功能已從「社群」退化為「**資訊看板**」：揪球從月均 7 篇跌到月均 0.3 篇。
+- 讀者把文章當「**即時討論串**」用——追比賽、追台灣選手（柯秉逸）、追八卦。
+- 兩大悲劇（楊清順 2023、張榮麟 2025）的情感動員超越任何賽事，是社群真正的情感高峰。
+
+### 英語 Reddit＝「玩家型」社群
+- r/billiards（19.9 萬訂閱）是全球最大英語撞球社群，但**賽事只占 1.2%**。
+- 內容結構：**求助 43%**、球局 37%、技術／社交／裝備各約 7%。
+- 最高互動的是 Shitpost（迷因）、Pool Stories（球場故事）、Cue Porn（曬桿）——都不是「正經撞球」。
+- 年度高分文**沒有一篇是「某選手奪冠」**：全是個人圓夢、神奇球路、人情故事。
+
+### 中國 B站／貼吧＝「教學娛樂型」社群
+- 討論**高度分散在影音平台**（B站、抖音），論壇（貼吧）退居其次。
+- 「台球」泛詞頭部樣本就有 **8.57 億播放**，是斯諾克的 2.4 倍。
+- 內容四大類：娛樂迷因（流量主力）、教學（高黏著常青）、遊戲跨界（破圈）、賽事剪輯（相對小眾）。
+- **聲量與參與倒掛**：斯諾克線上聲量遠勝中式八球，但中式八球線下參與人口最大。
+
+> **為什麼這很重要**：三地玩家進入撞球的「入口」不同——台灣從「看比賽」、英語圈從「玩球求助」、
+> 中國從「看影片學球」。APEX 要進入哪個市場，社群策略就得對應不同的入口。
+
+---
+
+## 跨社群共同訊號（三地一致）
+
+撇開差異，三大社群有幾個**一致的結構性訊號**，對 APEX 極具參考價值：
+
+1. **賽事直播都不是主流量**——PTT 是「只剩賽事」，Reddit 是「賽事不重要」，中國是「娛樂教學壓過賽事」。純賽事驅動的產品天花板有限。
+2. **開倫／三顆星全球性隱形**——PTT 五年 0 篇、中國幾乎不見，僅 Reddit 有 47 篇小眾存活。跨球種評分仍應保留它，但別期待社群聲量。
+3. **新手求助是巨大但未被滿足的需求**——Reddit 求助占 43%、PTT 新手問題乏人回應。**「我多強／我怎麼變強」沒有人在服務**。
+4. **裝備與身份認同是高互動鉤子**——Reddit Cue Porn 8.5 分、中國器材帶貨成熟。玩家有展示欲與消費力。
+5. **沒有任何社群在管理「玩家戰績／評分」**——這是三地共同的空缺，也是 APEX 最大的機會。
+
+---
+
+## 對 APEX 的關鍵啟示
+
+### 1. 評分系統要服務「玩家型」需求，不只「觀眾型」
+全球最大社群（Reddit）的 43% 是玩家求助、賽事僅 1.2%。若 APEX 評分只服務職業賽事追蹤，會錯過最大的群體。
+**DUPR 模式（人人有分）正確**——它正中「我多強」這個三地共通卻無人滿足的渴望。
+
+### 2. 跨球種統一評分有真實需求訊號
+Reddit 把 8 球、9 球、10 球、One Pocket、3-Cushion 全混在一個版，**同一批玩家本來就跨球種流動**，需要統一身份與評分（呼應 `/research/` 的跨賽制評分）。
+
+### 3. APEX 可成為跨平台的「撞球身份證／評分中台」
+三地社群都沒有掌握「玩家評分／戰績」，中國貼吧的選手生態甚至已冷凍。
+**這個整合者的位置是空的**——APEX 用評分系統承接「戰績管理」，是無人競爭的藍海。
+
+### 4. 不同市場用不同社群打法
+- **台灣**：賽事熱度仍在（柯秉逸、台北主場），可用「賽事＋評分」串起既有觀眾，再導流到玩家功能。
+- **英語圈**：玩家互助與裝備炫耀是鉤子，設計**可炫耀的評分徽章／檔案頁**最對味。
+- **中國**：入口是「教學＋變強」，評分搭配「測等級 → 給進步路徑」，並善用明星與女子 IP 破圈。
+
+### 5. 社群 → 球館 → 電商可形成商業閉環
+中國 B站撞球內容已大量器材帶貨，證明撞球人口有消費力。
+結合 `/saas-research/` 的店務系統：**評分系統 → 球館會員 → 器材電商**可形成閉環。
+
+---
+
+## 研究文件索引
+
+| 編號 | 文件 | 內容 |
+|------|------|------|
+| 00 | 本檔 | 三社群鏡像框架、跨社群共同訊號、APEX 切入點 |
+| 01 | 台灣 PTT 撞球版五年爬梳（2021–2026）| 1,194 篇、19 篇爆文、選手關注度、版面維生化趨勢 |
+| 02 | 英語 Reddit 撞球社群爬梳 | r/billiards 19.9 萬訂閱、3,264 篇普查、玩家型 vs 觀眾型鏡像 |
+| 03 | 中國 B站／貼吧撞球社群爬梳 | B站億級播放、貼吧規模、影音教學驅動、聲量參與倒掛 |
+
+---
+
+## 方法論與限制（總覽）
+
+- **PTT**：自動爬蟲（curl + Python）讀取 Billiard 版 index 1127–1187 ＋精華區，2021-06～2026-06。
+- **Reddit**：官方 API／網頁對本機 IP 全封鎖，改用 **PullPush.io** 歷史存檔 API（涵蓋 2009→2025-05）＋ Redlib 鏡像取社群人數。
+- **中國**：Bilibili 透過真實瀏覽器（Playwright）登入態呼叫開放搜尋 API（6 關鍵字、各約 480 部）；百度貼吧繞過安全驗證取吧務規模；知乎／抖音／小紅書為登入牆，未能取得結構化數據。
+- 所有絕對數值為抓取當下快照，資料截止 **2026-06-25**。
+
+---
+
+*本研究線整合 PTT／Reddit／Bilibili 三地爬梳成果，原始資料與爬蟲腳本見 `/research/data/`。*
+</script><div class="rendered" id="doc-0"></div></section>
+<section class="doc" data-short="台灣 PTT（五年）"><script type="text/markdown" id="md-1">
+# PTT 撞球版（Billiard）五年爬梳分析
+> 資料期間：2021-06-01 ～ 2026-06-25  
+> 資料來源：https://www.ptt.cc/bbs/Billiard（index 1127–1187）＋精華區  
+> 分析日期：2026-06-25
+
+---
+
+## 一、五年總體數字
+
+| 項目 | 數值 |
+|------|------|
+| 總文章數 | 1,194 篇 |
+| 爆文（100推以上） | 19 篇 |
+| 不重複發文作者 | 239 人 |
+| 五年平均推文數/篇 | 9.7 推 |
+
+---
+
+## 二、年度彙整對比
+
+| 年度 | 文章總數 | 不重複作者 | 平均推文 | 真實討論文* | 說明 |
+|------|----------|------------|----------|-------------|------|
+| 2021 | 135 篇 | 49 人 | 3.9 | 66 篇 | 疫情後復甦期，版面沉寂 |
+| 2022 | 302 篇 | **92 人** | 7.5 | 219 篇 | **最多作者年**，台灣球壇重啟 |
+| 2023 | 303 篇 | 83 人 | **13.0** | 254 篇 | **互動最高年**，WNT 元年爆發 |
+| 2024 | 213 篇 | 55 人 | 11.0 | 180 篇 | 開始收縮 |
+| 2025 | 178 篇 | 57 人 | 9.8 | 150 篇 | 繼續下滑 |
+| 2026 | 63 篇 | 21 人 | 12.0 | 56 篇 | 上半年，活躍度低但推文高 |
+
+*扣除 [互動]（揪球/賣桿）類文章
+
+**結論**：版面從 2022–2023 的雙高峰（文量＋互動同時達頂）開始下行，2026 年文章量跌至最低，但人均推文仍維持，說明有固定核心讀者仍在，只是新人不來、老人少發文。
+
+---
+
+## 三、十九篇爆文（100推以上）全覽
+
+| 日期 | 標題 | 觸發事件 |
+|------|------|----------|
+| 2022-09-03 | [情報] 2022 美洲豹十號球世界團隊賽－冠軍菲律賓 | 世界10球台灣出賽 |
+| 2022-09-03 | [情報] 【2022 世界十號球女子錦標賽】冠軍**周婕妤** | 台灣女將奪世界冠軍 |
+| 2023-02-04 | [轉播] 2023世界花式撞球錦標賽 Day4 | 世界錦標賽現場直播 |
+| 2023-02-05 | [轉播] 2023世界花式撞球錦標賽 Day5 | 決賽衝刺 |
+| 2023-05-13 | [轉播] 大師賽 4強＆冠軍賽 **柯秉逸**出賽 | 大柯大師賽衝冠 |
+| 2023-06-03 | Re: [轉播] 2023 英國公開賽 冠軍 Eklent Kaci | 賽事即時追蹤 |
+| 2023-06-20 | [轉播] 2023西班牙公開賽 6/20~6/25 | 連續爆文月 |
+| 2023-06-27 | [LIVE] 2023 WCP 世界盃雙打賽 | 台灣選手雙打出賽 |
+| 2023-08-07 | [情報] 2023 WNT歐洲公開賽 @德國 | WNT 首年高峰 |
+| 2023-08-29 | [情報] 2023 ACBS台塑亞錦賽 @台北花園大酒店 | 大賽在台舉辦 |
+| 2023-09-25 | [情報] 2023 美國公開賽（WNT） | WNT 美國站 |
+| 2023-09-30 | [LIVE] 2023 美國公開賽 四強決賽 **柯秉中**出賽 | 小柯闖四強 |
+| 2023-10-10 | [情報] 2023 河內公開賽（WNT） | WNT 越南站 |
+| 2024-06-06 | [轉播] 2024世界9號球錦標賽 單敗階段 | 年度世界賽 |
+| 2024-08-18 | [賽事] 2024美國公開賽 8/19~8/24 | WNT 年度大站 |
+| 2024-10-08 | [情報] 2024 河內公開賽 冠軍 Johann Chua | 越南站決賽 |
+| 2025-07-24 | [轉播] 2025世界9號球錦標賽 單敗階段 | 世界賽直播追蹤 |
+| 2025-08-18 | [賽事] WNT美國公開賽 8/18~23 | 高人氣賽事 |
+| 2026-01-07 | [賽事] WNT台北公開賽第四站 冠軍**柯秉逸** | 台灣場地加持 |
+
+**爆文模式**：全部 19 篇爆文都是賽事轉播/情報，無一例外。讀者將文章當作「即時討論串」使用，追蹤比賽動態、討論台灣選手動向。
+
+---
+
+## 四、各年度最具代表性事件
+
+### 2021｜疫情陰影下的版面
+
+**年度最高推文**：
+- **[35推] 2021-07-27「220家撞球館快倒閉 撞球總會發函行政院」**
+  → 疫情導致台灣撞球業慘況；當年最高互動文不是賽事，而是行業生死問題
+- [32推] 2021-09「Judd Trump 美國公開賽之旅」
+  → 英國撞克（桌球）名將跨項參賽，引發跨圈討論熱潮，整個9月文章量衝到44篇
+
+**重要訊號**：
+- 疫情後重開的「揪球」文章衝到 57 篇（五年最高），顯示人們急於回到球館
+- 邪神（張榮麟）首度在版上高頻出現，2021 年已是版面人氣擔當
+
+---
+
+### 2022｜最多人的一年，台灣撞壇最戲劇化
+
+**年度最高推文**：
+- **[爆] 2022-09-03 周婕妤奪女子世界10球冠軍**
+  → 台灣女將在世界舞台登頂，是2022年最大情感動員點
+- **[爆] 2022-09-03 美洲豹十號球世界團隊賽冠軍菲律賓**（同日爆文）
+- [89推] 2022-05-08 大師賽「柯秉逸出賽」直播
+
+**八月大戲「腥風血雨」**（62篇高峰月）：
+- 「台灣撞壇要腥風血雨囉，準備好爆米花吧~」[33推] 引發26推跟文
+- 「救愛的一篇文」[27推] — 台灣球壇內部矛盾在版上公開爆發
+- APF 亞洲9球公開賽柯秉逸奪冠 [47推] — 情緒從八卦轉向光榮
+
+**2022 特徵**：
+- 全年 92 位不同作者，是五年之冠
+- 台灣選手（柯秉逸×10、陳佳樺×10）是最主要話題
+- 版面活力最強，[閒聊]、[討論] 類文章都有高互動
+
+---
+
+### 2023｜版面的黃金年
+
+**全年爆文 10 篇（五年占比 53%）**，創下本版歷史紀錄。
+
+**爆發主因**：WNT（World Nineball Tour）第一年完整舉辦
+- 每站都有大量討論，美國站甚至連續爆文
+- 2023 是第一個把「WNT 賽季」當追劇在追的一年
+
+**年度最高推**：
+- [爆] 2023-02 世界花式撞球錦標賽 Day4/5 — 兩天連爆
+- [爆] 2023-05-13 大師賽「柯秉逸」出賽 → 板友幾乎都在現場陪轉
+- [90推] 2023-02-22 拉斯維加斯公開賽男子組
+
+**年底衝擊：楊清順病逝（2023-12-06）**
+- [73推]「有人過世了？」— 台灣著名撞球評論員/前選手楊清順癌逝，年僅45歲
+- [37推] 新聞「眾嘆撞球沒落」— 哀傷討論台灣撞球發展困境
+- 全周連續多篇悼念，社群情感動員強烈
+
+---
+
+### 2024｜結構轉移，後爆文時代
+
+**文章量從 303 降至 213（-30%）**，作者從 83 降至 55（-34%）
+
+爆文仍有 3 篇，但集中在：
+- 世界9球 6月站、美國公開賽 8月、河內公開賽 10月
+→ WNT 三大站固化為年度高峰節點
+
+[互動] 揪球文章：75（2022）→ 34（2023）→ 25（2024）
+→ 疫情後揪球熱情完全退去，恢復到且持續下降
+
+**重要新訊號**：
+- 台灣選手名字出現頻率下降：大柯×3、小柯×1
+- 版面越來越像「資訊看板」而非「社群」
+
+---
+
+### 2025｜張榮麟猝逝，五年最大悲劇
+
+**年度最大事件（非賽事類）：火雲邪神張榮麟猝逝（2025-07-14）**
+
+張榮麟是台灣最知名花式撞球選手之一，2025年初仍活躍奪冠。7月14日心肌梗塞突然離世，震驚全台撞球圈。
+
+| 篇 | 推數 | 說明 |
+|---|---|---|
+| [情報] 邪神好像出事了 | **59推** | 第一則消息文 |
+| [新聞] 快訊／2周前剛奪冠！ | 15推 | 媒體報導 |
+| [情報] 「火雲邪神」張榮麟 1985~2025 開放捻香 | 14推 | 告別式公告 |
+| [閒聊] 邪神人生最後一場比賽影片 | 4推 | 緬懷影片 |
+| [新聞] 緯來體育台致敬張榮麟短片 | 3推 | 媒體追悼 |
+| [情報] 張榮麟 母球上的永恆詩篇 | 6推 | 8月悼文 |
+
+**張榮麟（邪神）在5年版面的存在**：
+- 2021：版上人氣球員標誌「邪神西去 雙柯稱帝」[31推]
+- 2022：征戰中國高獎金賽、Sharks 三重奏
+- 2023：台塑杯、持續活躍
+- 2025：猝逝，59推、全版悲痛
+
+---
+
+### 2026｜高人均、低人數，核心族群固守
+
+上半年 63 篇，但平均推文 12.0（5年次高），說明：
+- 現在發文的人都是真正關注撞球的核心族群
+- 「獨牙九球」崛起成為新的追蹤重點（冠軍 1000 萬人民幣）
+- 柯秉逸在台北公開賽奪冠，引發 2026 年最熱推文
+
+---
+
+## 五、時間軸趨勢（月份）
+
+### 文章量走勢（2021-06 ~ 2026-06）
+
+```
+2021-06:   7 ███████
+2021-07:  10 ██████████
+2021-08:  15 ███████████████
+2021-09:  44 ████████████████████████████████████████████  ← Judd Trump 效應
+2021-10:  20 ████████████████████
+2021-11:  23 ███████████████████████
+2021-12:  16 ████████████████
+2022-01:  20 ████████████████████
+2022-02:  23 ███████████████████████
+2022-03:  23 ███████████████████████
+2022-04:  16 ████████████████
+2022-05:  22 ██████████████████████
+2022-06:  16 ████████████████
+2022-07:  14 ██████████████
+2022-08:  62 ██████████████████████████████████████████████████████████████  ← 台灣八卦＋APF亞洲賽
+2022-09:  35 ███████████████████████████████████  ← 周婕妤×2爆文
+2022-10:  32 ████████████████████████████████
+2022-11:  20 ████████████████████
+2022-12:  19 ███████████████████
+2023-01:  23 ███████████████████████
+2023-02:  26 ██████████████████████████  ← 世界花式×2爆文
+2023-03:  29 █████████████████████████████
+2023-04:  23 ███████████████████████
+2023-05:  31 ███████████████████████████████
+2023-06:  24 ████████████████████████  ← 3篇爆文
+2023-07:  13 █████████████
+2023-08:  21 █████████████████████  ← 2篇爆文
+2023-09:  24 ████████████████████████  ← 2篇爆文
+2023-10:  35 ███████████████████████████████████  ← 1篇爆文
+2023-11:  20 ████████████████████
+2023-12:  34 ██████████████████████████████████  ← 楊清順逝世
+2024-01:  17 █████████████████
+2024-02:   9 █████████
+2024-03:  21 █████████████████████
+2024-04:  17 █████████████████
+2024-05:  17 █████████████████
+2024-06:  25 █████████████████████████  ← 世界9球爆文
+2024-07:  13 █████████████
+2024-08:  20 ████████████████████  ← 美國公開賽爆文
+2024-09:  21 █████████████████████
+2024-10:  21 █████████████████████  ← 河內公開賽爆文
+2024-11:  11 ███████████
+2024-12:  21 █████████████████████
+2025-01:  12 ████████████
+2025-02:  12 ████████████
+2025-03:   9 █████████
+2025-04:  18 ██████████████████
+2025-05:  10 ██████████
+2025-06:  13 █████████████
+2025-07:  30 ██████████████████████████████  ← 世界9球爆文＋邪神猝逝
+2025-08:  16 ████████████████  ← 美國公開賽爆文
+2025-09:  18 ██████████████████
+2025-10:  15 ███████████████
+2025-11:  11 ███████████
+2025-12:  14 ██████████████
+2026-01:  21 █████████████████████  ← 台北公開賽爆文
+2026-02:  13 █████████████
+2026-03:   5 █████
+2026-04:   5 █████
+2026-05:   7 ███████
+2026-06:  12 ████████████
+```
+
+### 季節週期規律
+
+- **夏季（7–9月）**：固定高峰，原因：暑假打球人多＋夏季國際大賽密集
+- **冬末春初（2–3月）**：第二波高峰（世界大賽、農曆年後）
+- **春末（3–4月）**、**初秋後（11月）**：固定低谷
+
+---
+
+## 六、文章分類（5年Tag統計）
+
+| 標籤 | 5年篇數 | 平均推文 | 特性 |
+|------|---------|----------|------|
+| [互動] | **264篇** | 0.8 | 揪球＋賣桿，**幾乎無互動** |
+| [情報] | 218篇 | 13.7 | 賽前情報、賽後結果，高熱度 |
+| 無標籤 | 191篇 | 5.8 | 雜文 |
+| [閒聊] | 150篇 | 8.2 | 選手討論、球壇八卦 |
+| [問題] | 106篇 | 5.1 | 新手求助 |
+| [轉播] | 104篇 | **20.6** | 最高平均推文之一 |
+| [賽事] | 52篇 | **34.5** | **最高平均推文**，主力熱度驅動 |
+| [討論] | 38篇 | 9.8 | 技術/球壇話題 |
+| [新聞] | 29篇 | 9.4 | 媒體報導 |
+| [LIVE] | 19篇 | **36.5** | 最高平均推文（並列第一） |
+| [心得] | 5篇 | 17.2 | 少但高品質 |
+| [預測] | 2篇 | 37.5 | 罕見，但超高互動 |
+
+**關鍵發現**：
+- `[LIVE]` 和 `[賽事]` 是每篇最熱的類型（35–37推均），但篇數少
+- `[互動]` 雖有 264 篇（全版最多），推文均不到 1，是最無效的類型
+- `[情報]` 是事實上的核心：量大（218篇）且互動佳（13.7推均）
+
+---
+
+## 七、社群活躍度趨勢
+
+### 揪球文章年度變化（最佳社群活躍度代理指標）
+
+```
+2021:  57篇 ████████████████████████████████████████████████████████
+2022:  75篇 ███████████████████████████████████████████████████████████████████████████  ← 峰值
+2023:  34篇 ██████████████████████████████████
+2024:  25篇 █████████████████████████
+2025:  24篇 ████████████████████████
+2026:   4篇 ████
+```
+
+**解讀**：
+- 2022年揪球文章衝到75篇（月均6篇），代表大家最想約球的一年
+- 2023後腰斷式下跌，不是人不打球，而是人不來PTT約了（可能已轉去LINE群、Instagram）
+- 2026年幾乎斷絕（半年4篇），「版面揪球」已名存實亡
+
+### 每月不重複作者趨勢
+
+```
+年度     最高月/人    最低月/人    備註
+2021       17人       6人         疫情壓制
+2022       27人       6人         ← 五年最高單月
+2023       16人       8人         仍健康
+2024       14人       3人         ← 首次出現月度3人低谷
+2025       16人       4人         搖擺
+2026        9人       3人         持續走低
+```
+
+---
+
+## 八、核心供稿者集中度
+
+### 五年最活躍發文者
+
+| 排名 | ID | 5年篇數 | 主要角色 |
+|------|----|---------|----------|
+| 1 | **wpd** | 306 | 賽事情報主力，幾乎包辦所有重要賽事文章 |
+| 2 | **HulkSmash** | 195 | 賽事＋情報主力 |
+| 3 | abc29250938 | 75 | 各類 |
+| 4 | koflll | 61 | 情報＋閒聊 |
+| 5 | rqb | 38 | 賽事跟追 |
+
+- **wpd + HulkSmash 合計 501 篇，占總量 42%**
+- 前 5 名合計佔全版 56%
+- 若 wpd 某月不發文，那個月的賽事版塊幾乎空白
+
+---
+
+## 九、關鍵人物關注度（標題出現次數）
+
+| 選手 | 2021 | 2022 | 2023 | 2024 | 2025 | 2026 |
+|------|------|------|------|------|------|------|
+| 柯秉逸（大柯） | 1 | 10 | 3 | 3 | 3 | 3 |
+| 柯秉中（小柯） | 0 | 2 | 6 | 1 | 2 | 0 |
+| 張榮麟（邪神） | 4 | 4 | 7 | 0 | **7** | 0 |
+| 周婕妤 | 0 | 4 | 4 | 0 | 1 | 0 |
+| 陳佳樺 | 0 | **10** | 0 | 0 | 0 | 0 |
+
+**解讀**：
+- 大柯（柯秉逸）是唯一在5年持續出現的選手，是台灣撞球最穩定的媒體人物
+- 邪神（張榮麟）出現高峰在2023年（7次）和2025年（7次，猝逝年）
+- 陳佳樺 2022 年爆紅（女子世界賽），之後完全消失
+- 周婕妤 2022 世界冠軍後持續有一定關注度但未能成為版面長期明星
+
+---
+
+## 十、重大事件時間軸
+
+| 時間 | 事件 | 最高推文 | 性質 |
+|------|------|----------|------|
+| 2021-07 | 台灣220家撞球館面臨倒閉 | 35推 | 行業危機 |
+| 2021-09 | Judd Trump 跨項參賽美國公開賽 | 32推 | 跨界熱點 |
+| 2022-05 | 柯秉逸大師賽直播 | 89推 | 台灣選手巔峰 |
+| 2022-08 | 「台灣撞壇腥風血雨」八卦大爆 | 33推 | 球壇內部矛盾 |
+| 2022-09 | 周婕妤女子世界10球冠軍 | **爆** | 台灣歷史時刻 |
+| 2023-02 | 世界花式錦標賽 Day4/5 連爆 | **爆** | WNT第一年高峰 |
+| 2023-06 | WNT 英國/西班牙/雙打三連爆 | **爆** | 史上最熱單月 |
+| 2023-12 | 楊清順癌逝（撞球之子，45歲） | 73推 | 行業哀悼 |
+| 2024-06 | 世界9球錦標賽 | **爆** | 年度固定盛事 |
+| 2025-07 | 張榮麟（邪神）猝逝，心肌梗塞 | 59推 | 年度最大震撼 |
+| 2026-01 | 柯秉逸台北公開賽奪冠 | **爆** | 台灣主場光榮 |
+
+---
+
+## 十一、跨版新興賽事生態觀察
+
+### WNT 的崛起（2023 起）
+- 2023 年是 WNT（World Nineball Tour）第一個完整賽季，也是 PTT 板最多爆文的年度
+- 全球化職業巡迴確立三大固定高峰：美國站、越南河內站、歐洲站
+
+### 「獨牙九球」的崛起（2025-2026）
+- 中國辦的高獎金九球賽，冠軍獎金達 1000 萬人民幣
+- 2025 後在板上出現 6 次，正在成為 WNT 外的第二大追蹤焦點
+- **這是五年內最重要的新生態變數**
+
+### 台北公開賽（在地因素）
+- 台灣主場辦 WNT 站，直接驅動爆文（2026-01 台北站：爆文＋後續 34 推新聞文）
+- 本地賽事加上選手加成（柯秉逸奪冠）是現階段台灣板的最強觸發組合
+
+---
+
+## 十二、精華區（歷年累積）結構
+
+| 分類 | 文章數 | 備註 |
+|------|--------|------|
+| 新聞報導 | 241 | 大量 2000–2010 年代媒體剪報 |
+| 心得分享 | 52 | 技術心得 |
+| 重大賽事 | 55 | 早期賽事紀錄（最新為 2010 年代） |
+| 疑難雜症 | 48 | Q&A |
+| 談天說地 | 23 | 雜談 |
+| 名次排名 | 18 | 歷年排名 |
+| 撞球規則 | 12 | 規則說明 |
+| 中華民國撞球協會 | 12 | 協會組織說明 |
+| 傲人事績 | 10 | 台灣選手成就 |
+| 選手檔案 | 9 | 早期選手介紹 |
+| 熱門話題 | 5 | 歷年爭議 |
+
+**近 5 年精華區新增文章：0 篇**（完全停止更新）
+
+---
+
+## 十三、關鍵 Insights 總結
+
+### Insight 1：2023 是黃金年，之後下行無反轉
+- WNT 開辦第一年（2023）帶來 10 篇爆文、303 篇文章，是版面最活躍年
+- 2024–2026 呈線性下降趨勢，沒有任何反彈跡象
+- **2026 年 3–4 月單月僅 3–4 人發文，接近板面休眠邊緣**
+
+### Insight 2：版面功能已從「社群」退化為「資訊看板」
+| 功能 | 2021–2022 | 2024–2026 |
+|------|-----------|-----------|
+| 揪球約球 | 月均 7 篇 | 月均 0.3 篇 |
+| 球桿裝備討論 | 活躍 | 有問少答 |
+| 球壇八卦 | 爆文常態 | 偶發 |
+| 賽事追蹤 | 核心功能 | **唯一功能** |
+
+### Insight 3：兩大悲劇定義了社群的情感高峰
+- **楊清順（2023-12，45歲，癌症）**：台灣撞球推廣代表，板上引發「撞球沒落」的集體反思
+- **張榮麟（2025-07，40歲，心肌梗塞）**：火雲邪神，板上出現最多的選手，猝逝引發整板哀悼
+- 兩次事件的推文互動都超越同期任何賽事（非台灣選手奪冠的情況下）
+
+### Insight 4：花式9球一枝獨秀，其他球種隱形
+- **開倫（三顆星、四顆）：五年內無一篇專屬文章**
+- 8號球：偶爾提及（中八球）
+- 10號球：賽事時有討論（周婕妤、柯秉中奪冠時）
+- 直撞 14.1、One Pocket：完全不見
+
+### Insight 5：台灣有「超級供稿人」現象
+- wpd 一人發文 306 篇（占全版 26%），若此人停止更新，板面幾乎斷訊
+- 這既是優勢（有人維持），也是致命弱點（單點失效）
+
+### Insight 6：高獎金賽事是現在與未來的熱度引擎
+- WNT 月租制直播（10美金）已成板友追賽標配
+- 「獨牙九球」1000萬人民幣冠軍獎金：吸引全球頂尖選手，2026年後可能重塑版面焦點
+- **台北主場辦賽是最強的本地熱度觸發點**
+
+---
+
+## 附錄：原始資料
+
+- 全量文章 JSON（1,194篇）：`ptt_5y_all.json`
+- 月度統計：`monthly_5y.json`
+- Top 20 文章詳細內容：`ptt_articles_detail.json`
+- 精華區結構：`jinghua.json`
+
+---
+
+*本報告由自動爬蟲（curl + Python）生成，PTT index 1127–1187，資料截止 2026-06-25*
+</script><div class="rendered" id="doc-1"></div></section>
+<section class="doc" data-short="英語 Reddit"><script type="text/markdown" id="md-2">
+# Reddit 撞球社群爬梳分析
+
+> 資料來源：PullPush.io（Pushshift 後繼者，Reddit 官方 API 已封鎖本機 IP）＋ Redlib 鏡像（社群人數）
+> 主要樣本：r/billiards 近期普查 3,264 篇（2025-01-30～2025-05-19）＋ 各年度高分文（2020–2025）
+> 分析日期：2026-06-25
+
+---
+
+## 一、Reddit 撞球社群版圖
+
+英語圈撞球討論高度集中在 Reddit，少數幾個 subreddit 撐起整個生態：
+
+| 社群 | 訂閱人數 | 性質 | 活躍度 |
+|------|----------|------|--------|
+| **r/billiards** | **199,850** | 撞球綜合（以 pool 落袋為主）| 主樞紐，每週 100+ 篇 |
+| **r/snooker** | **82,438** | 斯諾克（英式）| 賽事期高度活躍 |
+| r/pool | 15,046 | 落袋撞球 | 已被 r/billiards 邊緣化 |
+| r/Cuesports | 9 | 桿類運動綜合 | 形同廢棄 |
+| r/CaromBilliards | 無有效社群 | 開倫/三顆星 | **不存在獨立社群** |
+
+**核心發現**：
+- **r/billiards 是唯一的主戰場**（近 20 萬人），是全球最大的英語撞球社群
+- r/snooker 自成一國（英國文化圈），與 pool 圈幾乎不重疊
+- **開倫（Carom／3-Cushion）沒有任何有效獨立社群** — 與 PTT 觀察一致：卡倫在英語圈一樣是隱形球種
+- r/pool 與 r/Cuesports 證明「名稱卡位」失敗，社群會自然向單一樞紐聚攏
+
+---
+
+## 二、r/billiards 內容結構（近期普查 3,264 篇）
+
+### 主題分類（依 flair）
+
+| 主題群 | 篇數 | 占比 | 平均分數 | 性質 |
+|--------|------|------|----------|------|
+| **求助/Help** | 1,401 | **43%** | 1.7 | 新手問題、球桿/球檯辨識、維修 |
+| **球局/Gameplay** | 1,194 | 37% | 3.7 | 8 球、9 球、10 球、One Pocket |
+| 技術/Skill | 233 | 7% | 4.0 | 練習、教學、花式 |
+| 社群/Social | 237 | 7% | **13.3** | 故事、迷因、賽事、聯賽 |
+| 裝備/Equipment | 115 | 4% | 8.5 | Cue Porn（曬桿）|
+
+### 細分 flair Top 20
+
+| flair | 篇數 | 平均分數 | 解讀 |
+|-------|------|----------|------|
+| Questions | 865 | 1.9 | **最大宗**，新手問題洪流 |
+| 8-Ball | 572 | 3.8 | 最熱門球種 |
+| 9-Ball | 417 | 3.2 | 第二球種 |
+| Cue Identification | 218 | 1.5 | 「這是什麼桿」 |
+| Maintenance and Repair | 119 | 1.8 | 維修保養 |
+| **Cue Porn** | 115 | **8.5** | 曬球桿，高互動 |
+| Drills | 98 | 1.8 | 練習法 |
+| Table Identification | 89 | 1.5 | 「這是什麼檯」 |
+| **Pool Stories** | 87 | **18.6** | **最高互動類之一**，球場故事 |
+| New Player Questions | 77 | 1.3 | 新手 |
+| **Shitpost** | 75 | **18.9** | **最高互動**，迷因廢文 |
+| Instructional | 70 | 2.6 | 教學 |
+| Trick Shots | 65 | 8.8 | 花式表演 |
+| One Pocket | 59 | 1.9 | 小眾球種有人氣 |
+| 10-Ball | 52 | 4.6 | |
+| **3-Cushion** | 47 | 4.2 | **開倫在 Reddit 有討論**（PTT 為 0）|
+| Tournament | 39 | 1.7 | **賽事僅 1.2%** |
+| Leagues | 36 | 1.5 | 聯賽 |
+| Snooker | 34 | 7.2 | 跨球種討論 |
+| WWYD | 33 | 1.6 | What Would You Do（走位決策）|
+
+---
+
+## 三、最關鍵 Insight：Reddit 與 PTT 是「鏡像相反」的社群
+
+這是本研究最重要的發現。同樣是撞球社群，**Reddit 和台灣 PTT 的驅動力完全相反**：
+
+| 維度 | PTT 撞球版（台灣）| r/billiards（英語圈）|
+|------|------------------|---------------------|
+| **核心功能** | 賽事追蹤（唯一焦點）| 玩家互助（求助 43%）|
+| **最高互動類** | [賽事]/[轉播]（35推均）| Shitpost/Pool Stories（19分均）|
+| **賽事占比** | 主力（爆文全是賽事）| **僅 1.2%（39 篇）** |
+| **選手討論** | 柯秉逸、邪神是核心 | 幾乎不追特定選手 |
+| **新手問題** | 乏人回應（3推）| **最大宗（865篇）但分數同樣低** |
+| **裝備討論** | 有問少答 | Cue Porn 高互動（曬桿文化）|
+| **開倫/三顆星** | 5 年 0 篇 | 47 篇（有小眾社群）|
+| **內容形式** | 純文字資訊看板 | 50% 圖片/影片（i.redd.it, v.redd.it）|
+
+**結論**：
+- **PTT 是「觀眾型」社群**：追比賽、追選手、追八卦 → 像體育新聞看板
+- **Reddit 是「玩家型」社群**：問問題、曬裝備、分享球場故事 → 像同好互助會
+- 兩者都**不靠賽事直播驅動主流量**（Reddit 賽事僅 1.2%），但原因相反：PTT 是「只剩賽事」，Reddit 是「賽事不重要，玩球本身才重要」
+
+---
+
+## 四、年度高分文化爆點（2020–2025）
+
+每年 r/billiards 最高分貼文，反映社群真正的情感焦點：
+
+| 年度 | 最高分文 | 分數 | 類型 |
+|------|----------|------|------|
+| 2020 | We've all been there at one point or another | 414 | 共鳴迷因 |
+| 2021 | It literally yeeted itself back out（球彈回來）| 502 | 神奇一桿/搞笑 |
+| 2022 | Brutal way to go out（殘酷收場）| 559 | 比賽名場面 |
+| 2023 | Dude thought he knew better than her（大叔小看女生）| 555 | 性別/打臉故事 |
+| 2024 | I recently sold this drawing（撞球主題畫作）| 405 | 藝術創作 |
+| 2025 | **I've waited 30 years for this moment!** | **993** | 圓夢（買到自己的球檯）|
+
+**模式**：
+- **沒有任何一篇是「某選手奪冠」** — 與 PTT 完全相反
+- 最高分內容都是：個人圓夢、神奇球路、搞笑名場面、人情故事
+- 2025 年度冠軍「等了 30 年終於擁有自己的球檯」993 分，是典型的「玩家情感」而非「觀眾情感」
+
+### 全站歷史 Top 100 的年份分布
+
+```
+2017:  1
+2019:  8 ████████
+2020: 21 █████████████████████  ← 疫情爆發，宅在家玩球/逛版
+2021: 11 ███████████
+2022: 28 ████████████████████████████  ← 高峰
+2023: 22 ██████████████████████
+2024:  3 ███  ← 驟降
+2025:  6 ██████
+```
+
+**解讀**：r/billiards 的「病毒級內容」高峰在 **2020–2022（疫情期）**，2024 後明顯減少。可能原因：
+- 疫情期間大量新人湧入、宅家追版 → 高分文集中
+- 2023 Reddit API 大改、第三方 App 死亡（Apollo 等）後，社群參與模式改變
+- 演算法與使用習慣改變，單篇爆紅更難
+
+---
+
+## 五、互動分布：極度長尾
+
+| 指標 | 數值 |
+|------|------|
+| 中位數分數 | **1 分** |
+| 平均分數 | 3.8 分 |
+| 中位數留言 | **0 則** |
+| 平均留言 | 3.2 則 |
+| 圖片/影片貼文 | 50%（i.redd.it 529、v.redd.it 192）|
+| 純文字貼文 | 50%（多為 Questions）|
+
+**重點**：
+- **一半的貼文得到 1 分、0 留言** — 大量新手問題石沉大海（與 PTT 的「問題乏人回應」異曲同工）
+- 真正引爆的是**少數迷因/故事/神球**，呈典型長尾
+- 高互動類（Shitpost 18.9、Pool Stories 18.6、Cue Porn 8.5）都不是「正經撞球內容」，而是娛樂/社交/炫耀
+
+---
+
+## 六、核心供稿者
+
+| 排名 | 帳號 | 近期篇數 | 角色 |
+|------|------|----------|------|
+| 1 | the_jac | 73 | 高頻發問/互動者 |
+| 2 | 10ballplaya | 56 | 球局內容 |
+| 3 | mudreplayspool | 38 | 影片分享 |
+| 4 | elitbilardoorhangazi | 38 | 土耳其用戶（球館）|
+| 5 | nitekram | 36 | 綜合 |
+
+**與 PTT 對比**：
+- PTT 的 wpd 一人包辦 26% 賽事文（單點供稿）
+- Reddit **沒有超級供稿人**，前 5 名合計占比低，是分散式 UGC（使用者生成內容），更健康但也更雜亂
+- 出現土耳其等非英語母語球館帳號 → Reddit 是真正的**全球**社群
+
+---
+
+## 七、對 APEX 的啟示
+
+### 1. 評分系統要服務「玩家型」需求，不只是「觀眾型」
+- Reddit 證明：全球最大撞球社群的 43% 是**玩家求助**，賽事僅 1.2%
+- APEX 評分若只服務職業賽事追蹤，會錯過最大的群體（業餘玩家想知道「我多強」）
+- **DUPR 模式正確**：它讓每個業餘玩家都有分數，這正是 Reddit 玩家型社群的核心渴望
+
+### 2. 跨球種統一評分有真實需求訊號
+- r/billiards 把 8 球、9 球、10 球、One Pocket、3-Cushion 全混在一個版
+- 同一批玩家在不同 flair 間流動 → **玩家本來就跨球種**，需要統一身份/評分
+- One Pocket（59）、3-Cushion（47）雖小眾但活著 → 不該被歸一化方案忽略
+
+### 3. 裝備與身份認同是高互動鉤子
+- Cue Porn（曬桿）平均 8.5 分，遠高於正經內容
+- 玩家對「我的裝備、我的成就」有展示欲 → APEX 可設計**可炫耀的評分徽章/檔案頁**
+
+### 4. 賽事不是流量主力，但仍是品質高點
+- Tournament flair 雖只占 1.2%，但這是 APEX 的切入點：**把分散的玩家用賽事＋評分串起來**
+- Reddit 的弱點正是 APEX 的機會：沒有人在 Reddit 上「管理你的戰績」
+
+---
+
+## 八、方法論與限制
+
+- **Reddit 官方 API／網頁對本機 IP 全面封鎖**（403 + 網路安全攔截），改用 PullPush.io 歷史存檔 API
+- PullPush 對 r/billiards 的存檔涵蓋 2009-10 ～ 2025-05；分數為發文後短期快照，**絕對分數偏保守**，但相對排序可靠
+- 近期普查樣本為 2025-01-30～2025-05-19（3,264 篇，約 3.7 個月），足以反映當前內容結構
+- 年度高分文採各年 sort by score 取 Top 25
+- 社群人數來自 Redlib 鏡像（redlib.perennialte.ch）即時抓取
+
+---
+
+*本報告由瀏覽器自動化（Playwright）＋ PullPush API ＋ Python 分析生成，資料截止 2026-06-25*
+</script><div class="rendered" id="doc-2"></div></section>
+<section class="doc" data-short="中國 B站／貼吧"><script type="text/markdown" id="md-3">
+# 中國撞球社群爬梳分析
+
+> 資料來源：Bilibili 開放搜尋 API（6 大關鍵字）＋ 百度貼吧（吧務規模）
+> Bilibili 樣本：每關鍵字取「最多播放」＋「最新發布」各約 480 部影片，時間跨度 2016–2026
+> 分析日期：2026-06-25
+
+---
+
+## 一、中國撞球社群版圖
+
+中國撞球討論**高度分散在影音/興趣平台**，與台灣 PTT（單一論壇）、英語圈 Reddit（單一樞紐）的「集中式論壇」模式截然不同：
+
+| 平台 | 性質 | 撞球內容形態 | 可及性 |
+|------|------|--------------|--------|
+| **Bilibili（B站）** | 影音/彈幕 | 教學、迷因、賽事剪輯、遊戲實況 | ✅ API 開放 |
+| **百度貼吧** | 論壇（最接近 PTT）| 文字討論、選手吧、器材 | ⚠️ 安全驗證 |
+| 抖音（Douyin）| 短影音 | 短教學、名場面、網紅 | ❌ 需登入 |
+| 知乎（Zhihu）| 問答/深度 | 「中式八球水平如何」類問答 | ❌ 需登入 |
+| 小紅書 | 生活分享 | 球館打卡、女性玩家 | ❌ 需登入 |
+| 虎撲 | 體育論壇 | 斯諾克賽事討論 | ⚠️ 反爬 |
+
+**核心結構性差異**：
+- 台灣／英語圈：**論壇為主**（PTT、Reddit），文字討論、賽事追蹤
+- 中國：**影音為主**（B站、抖音），教學與娛樂內容驅動，論壇（貼吧）退居其次
+- 這反映中國撞球人口的**入口是「看影片學球」**，而非「上論壇追賽事」
+
+---
+
+## 二、百度貼吧：規模與「碎片化」現象
+
+貼吧是中國最接近 PTT 的論壇。各撞球相關吧的規模：
+
+| 貼吧 | 關注人數 | 累積貼子 | 類型 |
+|------|----------|----------|------|
+| **台球吧** | **34.2 萬** | 274.8 萬 | 綜合（最大樞紐）|
+| **斯诺克吧** | **22.7 萬** | 299.5 萬 | 斯諾克 |
+| 奥沙利文吧 | 7.9 萬 | 169.7 萬 | 選手（火箭）|
+| 丁俊晖吧 | 7.3 萬 | 126 萬 | 選手（中國一哥）|
+| 中式八球吧 | 1.5 萬 | 8,219 | 球種 |
+| 九球吧 | 9,715 | 5,362 | 球種 |
+| 赵心童吧 | 674 | 3,322 | 選手（2025 世錦賽冠軍）|
+
+### Insight A：綜合吧獨大，球種吧「碎片化死亡」
+- 台球吧（34萬）＋ 斯诺克吧（23萬）佔據絕大多數人氣
+- **中式八球吧只有 1.5 萬關注、8 千貼**，九球吧更只有 5 千貼
+- 矛盾點：中式八球是中國**參與人口最多**的球種，但專屬貼吧卻極小
+- **原因**：中式八球玩家在「台球吧」這個大鍋討論，不另開球種吧；且早已遷移到抖音/B站
+
+### Insight B：選手吧的「世代落差」極端嚴重
+- **丁俊晖吧 7.3 萬**（累積 126 萬貼）vs **赵心童吧 674 人**
+- 趙心童 2025 年剛奪斯諾克世錦賽冠軍（中國史上第一人），貼吧卻只有 674 關注
+- **這證明貼吧的選手粉絲生態已「冷凍」**：丁俊晖吧是 2005–2015 黃金期積累的老資產，新生代球星的粉絲**根本不來貼吧**，全在抖音/微博
+- 對比 PTT：台灣選手討論集中在 PTT；中國新生代選手討論已徹底離開論壇
+
+### Insight C：奧沙利文 > 丁俊晖
+- 奥沙利文吧（7.9萬/169.7萬貼）人氣甚至超過丁俊晖吧
+- 中國斯諾克迷對「球星本身的技藝」崇拜，跨越國籍
+- 與 PTT 的「本土選手柯秉逸最熱」形成對比：**中國斯諾克迷更國際化、更追巨星**
+
+---
+
+## 三、Bilibili：中國撞球內容的真實重心
+
+B站是唯一 API 開放的平台，數據最完整。各關鍵字的內容規模（取樣本內加總）：
+
+| 關鍵字 | 樣本影片 | 總播放（樣本）| 單片最高播放 | 總按讚 |
+|--------|----------|---------------|--------------|--------|
+| **台球** | 480 | **8.57 億** | 1,148 萬 | 3,585 萬 |
+| **斯诺克** | 480 | 3.55 億 | 785 萬 | 1,143 萬 |
+| **丁俊晖** | 480 | 2.43 億 | 753 萬 | 588 萬 |
+| 中式台球 | 479 | 8,604 萬 | 785 萬 | 178 萬 |
+| 中式八球 | 477 | 4,877 萬 | 785 萬 | 64 萬 |
+| 九球 | 476 | 4,659 萬 | 1,032 萬 | 123 萬 |
+
+> 註：以上為「最多播放 Top ~480 部」樣本加總，非全站總量，但反映各題材的**頭部內容能量級**。
+
+### Insight D：「台球」泛詞量級碾壓一切
+- 「台球」樣本頭部就有 **8.57 億播放**，是斯諾克的 2.4 倍、中式八球的 17 倍
+- 證明：中國撞球的**大眾流量入口是泛娛樂「台球」內容**，不是特定球種
+- 單片冠軍是娛樂向：「當你把台球練到極致」（1,148 萬）、三國梗「主公不以臣卑鄙…三顾臣于球房之中」（1,133 萬）
+
+### Insight E：斯諾克 > 中式八球（線上聲量倒掛）
+- 斯诺克（3.55億）線上播放遠勝中式八球（4,877萬）
+- 但**中式八球的線下參與人口遠大於斯諾克**（中國街頭球房幾乎都是中式八球檯）
+- **聲量與參與倒掛**：斯諾克是「觀賞型」明星運動（看丁俊晖/奧沙利文），中式八球是「參與型」草根運動（自己打，不太看）
+- 這對 APEX 是關鍵：**參與型球種的玩家更需要評分系統**（他們要的是「我多強」而非「看誰贏」）
+
+---
+
+## 四、Bilibili 內容類型解構
+
+從各關鍵字 Top 影片的標題，可歸納中國撞球影音的四大內容類型：
+
+### 1. 娛樂/迷因（流量主力）
+- 「當你把台球練到極致 7.0」1,148 萬
+- 「主公不以臣卑鄙，猥自枉屈，三顾臣于球房之中」（三國梗）1,133 萬
+- 「史上最强台球赛」959 萬
+- 「物理学不存在了」785 萬（同片橫跨台球/斯諾克/中八多標籤）
+
+### 2. 教學（高黏著）
+- 「张镇辉台球正经教学【6个不太建议使用的技巧】」系列：4.0 版 801 萬、11.0 版 913 萬
+- 「台球零基础入门十三课」310 萬
+- **教學內容是長尾常青樹**，反映龐大的「想學球」需求
+
+### 3. 遊戲實況/跨界（破圈）
+- 「大司马台球开局一杆直接结束比赛」508 萬（遊戲主播打台球）
+- 「跟'丁俊晖'PK 打台球」531 萬（遊戲）
+- 透過遊戲/主播**把非撞球受眾帶進來**
+
+### 4. 賽事剪輯（相對小眾）
+- 「丁俊晖来了也含泪放下200块」753 萬（街球房挑戰）
+- 真正的職業賽事轉播剪輯，播放量反而不是最高
+- **與 PTT 相反**：在 B站，賽事不是流量天花板，娛樂與教學才是
+
+### Insight F：明星依賴 — 丁俊晖一人撐起 2.43 億
+- 「丁俊晖」單一關鍵字頭部就有 2.43 億播放，超越「中式八球」「九球」總和
+- 丁俊晖（老牌）的內容能量遠超趙心童（新科世界冠軍）
+- 中國斯諾克的大眾認知仍停留在「丁俊晖時代」，**新星尚未完成大眾破圈**
+
+---
+
+## 五、女子撞球的特殊地位
+
+- 九球關鍵字最高播放是「**一杆进七个！当九球天后遇上高速摄影机**」（1,032 萬）
+- 「潘晓婷」（九球天后）仍是常青內容
+- 中式八球的高播放片中也常見「美女裁判」「美女选手」標題
+- **Insight G**：中國撞球內容有明顯的「**顏值/女性選手**」流量密碼，九球尤其依賴此（九球天后潘曉婷是九球破圈關鍵）
+- 對比：PTT 的周婕妤（女子世界冠軍）是 2022 爆紅後即消失；中國的女子撞球 IP 經營更持久
+
+---
+
+## 六、時間趨勢觀察
+
+由於 B站搜尋 API 的「最新發布」排序會大量灌入近期影片，**無法用樣本年份分布推估真實逐年產量**。但可確認的趨勢訊號：
+
+- **2021–2022 是內容爆發轉折點**：張鎮輝教學（2021-11、2022-01）、丁俊晖迷因（2022）密集出現高播放
+- **2023 娛樂化高峰**：「練到極致」「史上最强台球赛」「九球天后高速攝影」三大千萬級爆款全在 2023
+- **2024–2026 持續產出但更分散**：頭部影片播放仍高，但題材更碎（廠商行銷、器材帶貨標籤增多，如「#台球桌生产厂家 #台球器材」）
+- **帶貨化**：近年高播放片標題夾帶大量器材廠商標籤，顯示**撞球內容正在商業化/電商化**
+
+---
+
+## 七、三大社群生態對比總表
+
+| 維度 | 台灣 PTT | 英語 Reddit | 中國 B站/貼吧 |
+|------|----------|-------------|---------------|
+| **主平台型態** | 文字論壇 | 文字+圖影論壇 | 影音彈幕 |
+| **集中度** | 單一版（高）| 單一樞紐 r/billiards | 高度分散（B站/抖音/貼吧/知乎）|
+| **規模** | 小（年百篇級）| 中（20萬訂閱）| 巨大（億級播放）|
+| **核心驅動** | 賽事追蹤 | 玩家互助 | 教學+娛樂 |
+| **賽事權重** | 最高（唯一焦點）| 最低（1.2%）| 中（不如娛樂教學）|
+| **明星效應** | 柯秉逸（本土）| 幾乎無 | 丁俊晖（巨星依賴）|
+| **球種焦點** | 9 球獨大 | 8 球>9 球，開倫有小眾 | 台球泛詞>斯諾克>中八 |
+| **開倫/三顆星** | 0（隱形）| 47 篇（小眾存活）| 幾乎不見 |
+| **女子撞球** | 曇花一現 | 偶見性別話題 | 常青流量密碼 |
+| **商業化** | 弱（賣桿乏人問）| Cue Porn 炫耀 | 強（器材帶貨）|
+
+---
+
+## 八、對 APEX 的關鍵啟示
+
+### 1. 中國市場的入口是「教學＋評分」，不是「賽事直播」
+- B站證明：中國撞球大眾的渴望是**「學球」與「變強」**（教學影片常青、千萬播放）
+- APEX 評分系統若搭配**「測你的等級 → 給你進步路徑」**，正中需求
+- DUPR 模式（人人有分）比「職業賽事排名」更貼合中國草根參與型生態
+
+### 2. 中式八球是「參與大、聲量小」的藍海
+- 中式八球線上聲量（4,877萬）遠小於斯諾克，但線下參與人口最大
+- **聲量倒掛 = 機會**：這群龐大的參與者目前缺乏線上身份與評分歸屬
+- APEX 跨球種統一評分，可把「只打不看」的中式八球玩家數位化
+
+### 3. 社群極度分散 = 沒有「評分話語權」的整合者
+- 中國撞球討論散落 B站/抖音/貼吧/知乎，**沒有任何一家掌握「玩家評分/戰績」**
+- 貼吧選手生態已冷凍（趙心童 674 人），新平台未承接「戰績管理」功能
+- **APEX 的機會**：成為跨平台的「撞球身份證/評分中台」
+
+### 4. 善用明星與女子 IP 破圈
+- 丁俊晖一人 2.43 億播放證明明星帶動力
+- 九球天后模式證明女子撞球的流量價值
+- APEX 推廣可借**明星表演賽＋評分**、**女子賽事＋評分**雙引擎破圈
+
+### 5. 商業化已成熟，付費土壤存在
+- B站撞球內容已大量器材帶貨 → 撞球人口有消費力與付費習慣
+- 結合 saas-research 的店務系統：**評分系統 → 球館會員 → 器材電商**可形成閉環
+
+---
+
+## 九、方法論與限制
+
+- **Bilibili**：透過真實瀏覽器（Playwright）取得登入態後呼叫開放搜尋 API（`x/web-interface/search/type`），每關鍵字取「最多播放」＋「最新發布」兩種排序各 12 頁、去重後約 480 部
+- **百度貼吧**：瀏覽器繞過安全驗證後讀取各吧「關注/貼子」規模數字；貼文列表因反爬包裹於動態 DOM，僅取吧務規模做橫向比較
+- **知乎/抖音/小紅書**：均為登入牆，本次未能取得結構化數據（已記錄為平台特性）
+- B站「最新發布」排序會灌入近期影片，故**年份分布僅供參考，不代表真實逐年產量**；播放/按讚等絕對數值為抓取當下快照
+- 所有數字截止 2026-06-25
+
+---
+
+## 附錄：原始資料
+
+- Bilibili 6 關鍵字影片資料：`data/bili/*.json`（taiqiu/snooker/zhongba/jiuqiu/zhongshi/dingjunhui）
+- 百度貼吧規模：`data/tieba_forums.json`
+
+---
+
+*本報告由瀏覽器自動化（Playwright）＋ Bilibili API ＋ Python 分析生成，資料截止 2026-06-25*
+</script><div class="rendered" id="doc-3"></div></section>
+  </main>
+</div>
+<button class="backtop" id="backtop" aria-label="back to top">↑</button>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script>
+(function(){
+  marked.setOptions({gfm:true, breaks:false});
+  document.querySelectorAll('script[type="text/markdown"]').forEach(function(s){
+    var i = s.id.split('-')[1];
+    var t = document.getElementById('doc-'+i);
+    try{ t.innerHTML = marked.parse(s.textContent.trim()); }
+    catch(e){ t.textContent = s.textContent; }
+  });
+
+  document.querySelectorAll('.rendered table').forEach(function(tb){
+    var w=document.createElement('div'); w.className='tbl';
+    tb.parentNode.insertBefore(w,tb); w.appendChild(tb);
+  });
+
+  var navlist=document.getElementById('navlist');
+  var secs=[].slice.call(document.querySelectorAll('section.doc'));
+  secs.forEach(function(sec,i){
+    sec.id='sec-'+i;
+    var h1=sec.querySelector('h1');
+    var grp=document.createElement('div'); grp.className='navdoc';
+    var a=document.createElement('a'); a.className='navtop'; a.href='#sec-'+i;
+    a.textContent=(sec.dataset.short||(h1?h1.textContent:('Doc '+i)));
+    grp.appendChild(a);
+    var subs=document.createElement('div'); subs.className='subs';
+    [].slice.call(sec.querySelectorAll('h2')).forEach(function(h2,j){
+      h2.id='sec-'+i+'-'+j; h2.style.scrollMarginTop='12px';
+      var sa=document.createElement('a'); sa.href='#sec-'+i+'-'+j;
+      sa.textContent=h2.textContent;
+      subs.appendChild(sa);
+    });
+    grp.appendChild(subs); navlist.appendChild(grp);
+    sec.style.scrollMarginTop='12px';
+  });
+  var navdocs=[].slice.call(document.querySelectorAll('.navdoc'));
+
+  var bar=document.getElementById('bar'), bt=document.getElementById('backtop');
+  function spy(){
+    var h=document.documentElement;
+    var max=h.scrollHeight-h.clientHeight;
+    bar.style.width=(max>0?(h.scrollTop/max*100):0)+'%';
+    bt.classList.toggle('show', h.scrollTop>600);
+    var ai=0;
+    secs.forEach(function(s,i){ if(s.getBoundingClientRect().top<=170) ai=i; });
+    navdocs.forEach(function(g,i){ g.classList.toggle('active', i===ai); });
+    var h2s=[].slice.call(secs[ai].querySelectorAll('h2'));
+    var hj=-1; h2s.forEach(function(x,j){ if(x.getBoundingClientRect().top<=170) hj=j; });
+    document.querySelectorAll('.subs a.on').forEach(function(a){a.classList.remove('on');});
+    var sub=navdocs[ai].querySelectorAll('.subs a');
+    if(hj>=0&&sub[hj]) sub[hj].classList.add('on');
+  }
+  bt.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});
+  window.addEventListener('scroll',spy,{passive:true});
+  window.addEventListener('resize',spy);
+  spy();
+})();
+</script>
+</body>
+</html>
