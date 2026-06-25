@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+
+<!-- APEX access gate (soft, client-side) -->
+<style>
+  html.apexlock body>*:not(#apex-gate){display:none!important}
+  html.apexlock{overflow:hidden}
+  #apex-gate{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#084d2a 0%,#0b6b3a 55%,#12894b 100%);
+    font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft JhengHei",sans-serif}
+  #apex-gate .gbox{width:min(92vw,360px);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);
+    border-radius:18px;padding:34px 30px 28px;box-shadow:0 24px 60px rgba(0,0,0,.32);backdrop-filter:blur(8px);
+    text-align:center;color:#eafaf0}
+  #apex-gate .gicon{width:54px;height:54px;border-radius:50%;margin:0 auto 14px;display:flex;align-items:center;
+    justify-content:center;font-size:26px;background:#e7b53c;color:#3a2c00;font-weight:800;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+  #apex-gate h2{margin:0 0 4px;font-size:21px;font-weight:800;letter-spacing:.5px;color:#fff}
+  #apex-gate p{margin:0 0 20px;font-size:13px;color:#bfe6ce}
+  #apex-gate input{width:100%;padding:13px 15px;border-radius:10px;border:1px solid rgba(255,255,255,.25);
+    background:rgba(0,0,0,.18);color:#fff;font-size:18px;text-align:center;letter-spacing:6px;outline:none;
+    transition:border-color .15s}
+  #apex-gate input:focus{border-color:#e7b53c}
+  #apex-gate button{width:100%;margin-top:12px;padding:12px;border:none;border-radius:10px;cursor:pointer;
+    background:#e7b53c;color:#3a2c00;font-size:15px;font-weight:800;letter-spacing:1px;transition:filter .15s}
+  #apex-gate button:hover{filter:brightness(1.06)}
+  #apex-gate .ge{display:none;margin-top:12px;font-size:12.5px;color:#ffd7d2}
+  #apex-gate.bad .gbox{animation:apexshake .42s}
+  @keyframes apexshake{10%,90%{transform:translateX(-2px)}30%,70%{transform:translateX(5px)}50%{transform:translateX(-7px)}}
+</style>
+<script>
+(function(){
+  var KEY='apex_gate_v1', HASH=193354864;
+  function hf(s){var x=5381;for(var i=0;i<s.length;i++){x=(((x*33)&0xffffffff)^s.charCodeAt(i))>>>0;}return x;}
+  function ok(){try{return sessionStorage.getItem(KEY)==='1';}catch(e){return false;}}
+  if(ok())return;
+  var H=document.documentElement; H.classList.add('apexlock');
+  function build(){
+    if(document.getElementById('apex-gate'))return;
+    var o=document.createElement('div'); o.id='apex-gate';
+    o.innerHTML='<div class="gbox"><div class="gicon">&#9899;</div>'+
+      '<h2>APEX 研究中心</h2><p>請輸入通行密碼以檢視內容</p>'+
+      '<input type="password" inputmode="numeric" autocomplete="off" aria-label="password" placeholder="•••">'+
+      '<button type="button">進入</button>'+
+      '<div class="ge">密碼錯誤，請再試一次</div></div>';
+    (document.body||H).appendChild(o);
+    var inp=o.querySelector('input'), btn=o.querySelector('button'), err=o.querySelector('.ge');
+    function submit(){
+      if(hf((inp.value||'').trim())===HASH){
+        try{sessionStorage.setItem(KEY,'1');}catch(e){}
+        o.parentNode&&o.parentNode.removeChild(o); H.classList.remove('apexlock');
+      }else{
+        o.classList.add('bad'); err.style.display='block'; inp.value=''; inp.focus();
+        setTimeout(function(){o.classList.remove('bad');},460);
+      }
+    }
+    btn.addEventListener('click',submit);
+    inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();submit();}});
+    setTimeout(function(){inp.focus();},30);
+  }
+  if(document.body){build();}
+  else{document.addEventListener('DOMContentLoaded',build);
+    // also try ASAP so the overlay paints before body content
+    var t=setInterval(function(){if(document.body){clearInterval(t);build();}},8);}
+})();
+</script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>撞球店雲端 SaaS 系統研究 · APEX</title>
+<style>
+  :root{
+    --felt:#0b6b3a; --felt-dark:#084d2a; --felt-light:#12894b;
+    --ink:#1a2230; --muted:#5b6776; --line:#e3e8ee; --bg:#f6f8fa;
+    --card:#ffffff; --accent:#e7b53c; --chalk:#2b6cb0;
+    --yes:#0b8a4a; --partial:#c98a00; --no:#c0392b;
+    --radius:14px; --shadow:0 1px 3px rgba(16,32,55,.06),0 8px 24px rgba(16,32,55,.06);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft JhengHei",sans-serif;
+    color:var(--ink);background:var(--bg);line-height:1.7;-webkit-font-smoothing:antialiased}
+  a{color:var(--chalk);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  /* ---------- layout ---------- */
+  .wrap{display:grid;grid-template-columns:260px 1fr;max-width:1280px;margin:0 auto;gap:0}
+  nav.side{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;
+    background:var(--felt-dark);color:#dff3e6;padding:26px 18px}
+  nav.side .brand{font-weight:800;font-size:19px;color:#fff;letter-spacing:.5px;margin-bottom:4px}
+  nav.side .brand span{color:var(--accent)}
+  nav.side .sub{font-size:12px;color:#9fd9b8;margin-bottom:22px}
+  nav.side a{display:block;color:#cfeadb;padding:8px 12px;border-radius:8px;font-size:14.5px;margin:2px 0}
+  nav.side a:hover{background:rgba(255,255,255,.08);text-decoration:none}
+  nav.side .grp{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#7cc59b;margin:18px 0 6px 12px}
+  main{padding:0 0 80px}
+
+  /* ---------- hero ---------- */
+  header.hero{background:linear-gradient(135deg,var(--felt) 0%,var(--felt-light) 100%);
+    color:#fff;padding:54px 48px 46px;position:relative;overflow:hidden}
+  header.hero::after{content:"";position:absolute;right:-60px;top:-60px;width:260px;height:260px;
+    background:radial-gradient(circle,rgba(255,255,255,.14),transparent 70%);border-radius:50%}
+  header.hero h1{margin:0 0 10px;font-size:32px;font-weight:800;letter-spacing:.5px}
+  header.hero p{margin:0;max-width:760px;color:#e4f6ec;font-size:15.5px}
+  .pills{margin-top:22px;display:flex;flex-wrap:wrap;gap:10px}
+  .pill{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);
+    padding:6px 14px;border-radius:999px;font-size:13px;backdrop-filter:blur(4px)}
+
+  section{padding:38px 48px;border-bottom:1px solid var(--line)}
+  section h2{font-size:23px;margin:0 0 6px;display:flex;align-items:center;gap:10px}
+  section h2 .n{display:inline-flex;align-items:center;justify-content:center;
+    width:30px;height:30px;border-radius:9px;background:var(--felt);color:#fff;font-size:15px;font-weight:700;flex:none}
+  section .lead{color:var(--muted);margin:0 0 22px;font-size:15px}
+  h3{font-size:17px;margin:26px 0 10px}
+
+  /* ---------- cards ---------- */
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px 18px 16px;box-shadow:var(--shadow)}
+  .card h4{margin:0 0 6px;font-size:15.5px}
+  .card p{margin:0;font-size:13.5px;color:var(--muted)}
+  .card .tag{display:inline-block;font-size:11px;font-weight:700;color:var(--felt);
+    background:#e7f5ec;padding:2px 9px;border-radius:6px;margin-bottom:8px}
+
+  /* key takeaways */
+  .takeaways{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;counter-reset:t}
+  .ta{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--felt);
+    border-radius:10px;padding:16px 18px;box-shadow:var(--shadow);position:relative}
+  .ta::before{counter-increment:t;content:counter(t);position:absolute;top:14px;right:16px;
+    font-size:26px;font-weight:800;color:#eef2f6}
+  .ta b{color:var(--felt-dark)}
+
+  /* feature blueprint */
+  .feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+  .feat .f{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow)}
+  .feat .f .ico{font-size:22px}
+  .feat .f h4{margin:6px 0 8px;font-size:15px}
+  .feat .f ul{margin:0;padding-left:18px;font-size:13px;color:var(--muted)}
+  .feat .f ul li{margin:3px 0}
+  .must{color:var(--accent);font-weight:700}
+
+  /* ---------- tables ---------- */
+  .tbl{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);background:#fff}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
+  th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line)}
+  thead th{background:var(--felt-dark);color:#fff;position:sticky;top:0;font-weight:600;white-space:nowrap}
+  tbody tr:nth-child(even){background:#fafcfd}
+  tbody tr:hover{background:#f0f7f3}
+  td.c,th.c{text-align:center}
+  .mk{font-weight:800;display:inline-block;width:22px}
+  .yes{color:var(--yes)} .partial{color:var(--partial)} .no{color:var(--no)} .na{color:#aab4c0}
+  caption{caption-side:bottom;font-size:12px;color:var(--muted);padding:8px;text-align:left}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin:0 0 14px}
+  .legend b{font-weight:800;margin-right:4px}
+
+  /* arch diagram */
+  pre.arch{background:#0d1b14;color:#cfe9d8;padding:20px;border-radius:var(--radius);overflow-x:auto;
+    font-size:12px;line-height:1.5;font-family:"SF Mono",Consolas,Menlo,monospace;box-shadow:var(--shadow)}
+  pre.code{background:#0f1117;color:#e6e6e6;padding:18px;border-radius:12px;overflow-x:auto;font-size:12.5px;
+    font-family:"SF Mono",Consolas,Menlo,monospace}
+  pre.code .k{color:#7ee0a3}
+
+  /* roadmap */
+  .road{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+  .ph{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow);
+    border-top:4px solid var(--felt-light)}
+  .ph .when{font-size:12px;color:var(--accent);font-weight:700;letter-spacing:.5px}
+  .ph h4{margin:4px 0 8px}
+  .ph p{margin:0;font-size:13px;color:var(--muted)}
+
+  .note{background:#fff8e6;border:1px solid #f0dca0;border-radius:10px;padding:14px 18px;font-size:14px;margin-top:16px}
+  .src{columns:2;column-gap:34px;font-size:13px}
+  .src h4{margin:14px 0 6px;color:var(--felt-dark);break-after:avoid}
+  .src a{display:block;margin:3px 0;word-break:break-all}
+  footer{padding:26px 48px;color:var(--muted);font-size:13px}
+
+  @media(max-width:900px){
+    .wrap{grid-template-columns:1fr}
+    nav.side{position:static;height:auto;display:flex;flex-wrap:wrap;gap:4px}
+    nav.side .grp{width:100%}
+    header.hero,section,footer{padding-left:22px;padding-right:22px}
+    .src{columns:1}
+  }
+
+  /* ---------- interactive widgets ---------- */
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 16px}
+  .btn{cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--ink);
+    padding:8px 14px;border-radius:9px;font-size:13.5px;font-weight:600;transition:.15s}
+  .btn:hover{border-color:var(--felt);color:var(--felt)}
+  .btn.primary{background:var(--felt);color:#fff;border-color:var(--felt)}
+  .btn.primary:hover{background:var(--felt-dark)}
+
+  /* scope planner */
+  .scope-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .scope-col{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow)}
+  .scope-col h4{margin:0 0 4px;font-size:15px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .ph-tag{font-size:11px;font-weight:700;padding:2px 9px;border-radius:6px;color:#fff;flex:none}
+  .ph1{background:var(--felt)} .ph2{background:var(--chalk)} .ph3{background:var(--accent);color:#3a2c00}
+  .scope-col .cap{font-size:12px;color:var(--muted);margin-bottom:8px}
+  .scope-item{display:flex;gap:9px;align-items:flex-start;padding:8px 0;border-top:1px dashed var(--line);font-size:13.5px;cursor:pointer}
+  .scope-item.locked{cursor:default}
+  .scope-item input{margin-top:2px;width:16px;height:16px;accent-color:var(--felt);flex:none;cursor:pointer}
+  .scope-item input:disabled{cursor:default}
+  .scope-item .wk{margin-left:auto;font-size:11.5px;color:var(--muted);white-space:nowrap;padding-left:6px}
+  .scope-sum{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}
+  .stat{background:linear-gradient(135deg,var(--felt),var(--felt-light));color:#fff;border-radius:12px;padding:14px 16px}
+  .stat .v{font-size:26px;font-weight:800;line-height:1.1}
+  .stat .l{font-size:12px;color:#dff3e6;margin-top:3px}
+  .stat.alt{background:#fff;color:var(--ink);border:1px solid var(--line)}
+  .stat.alt .l{color:var(--muted)}
+
+  /* calculator */
+  .calc{display:grid;grid-template-columns:1.05fr 1fr;gap:18px}
+  .calc .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:var(--shadow)}
+  .field{margin-bottom:15px}
+  .field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
+  .field .hint{font-weight:400;color:var(--muted);font-size:11.5px}
+  .field input[type=number]{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-variant-numeric:tabular-nums}
+  .field input:focus{outline:none;border-color:var(--felt)}
+  .seg{display:flex;gap:6px;flex-wrap:wrap}
+  .seg button{flex:1;min-width:80px;padding:9px 8px;border:1px solid var(--line);background:#fff;border-radius:9px;
+    cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);transition:.15s}
+  .seg button.on{background:var(--felt);color:#fff;border-color:var(--felt)}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .calc-out .big{background:linear-gradient(135deg,var(--felt),var(--felt-light));color:#fff;border-radius:12px;padding:18px 20px;margin-bottom:14px}
+  .calc-out .big .l{font-size:12.5px;color:#dff3e6}
+  .calc-out .big .v{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums}
+  .ln{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+  .ln span:last-child{font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+  .ln.tot{border-bottom:none;font-size:15px;color:var(--felt-dark);margin-top:2px}
+  .free{display:inline-block;background:#e7f5ec;color:var(--felt);font-weight:700;font-size:12px;padding:3px 10px;border-radius:6px}
+  @media(max-width:760px){.scope-grid{grid-template-columns:1fr}.scope-sum{grid-template-columns:1fr 1fr}.calc{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============ SIDEBAR ============ -->
+  <nav class="side">
+    <div class="brand">APEX<span>·</span>SaaS</div>
+    <div class="sub">撞球店雲端系統研究</div>
+    <div class="grp">研究</div>
+    <a href="#summary">結論摘要</a>
+    <a href="#features">功能藍圖</a>
+    <div class="grp">市場</div>
+    <a href="#china">中國市場</a>
+    <a href="#sea">東南亞市場</a>
+    <a href="#west">歐美市場</a>
+    <a href="#region">區域對照</a>
+    <div class="grp">分析</div>
+    <a href="#matrix">競品功能矩陣</a>
+    <a href="#strategy">切入策略</a>
+    <div class="grp">產品</div>
+    <a href="#mvp">MVP 範圍</a>
+    <a href="#arch">技術架構</a>
+    <a href="#iot">IoT 燈控盒</a>
+    <a href="#roadmap">落地路線圖</a>
+    <a href="#calculator">報價試算 ▸</a>
+    <div class="grp">附錄</div>
+    <a href="#sources">資料來源</a>
+  </nav>
+
+  <main>
+    <!-- ============ HERO ============ -->
+    <header class="hero">
+      <h1>撞球店雲端 SaaS 系統研究</h1>
+      <p>研究全球撞球店家所用的管理系統——中國、東南亞與歐美的代表廠商、功能差異與市場趨勢，並推導出我們若要打造一套雲端 SaaS 服務應具備的功能、競品定位與可施工的技術架構。</p>
+      <div class="pills">
+        <span class="pill">🇨🇳 中國 · 無人自助</span>
+        <span class="pill">🌏 東南亞 · 防作弊藍海</span>
+        <span class="pill">🌎 歐美 · POS＋預約</span>
+        <span class="pill">📡 IoT 燈控盒設計</span>
+        <span class="pill">📑 28＋ 一手來源</span>
+      </div>
+    </header>
+
+    <!-- ============ SUMMARY ============ -->
+    <section id="summary">
+      <h2><span class="n">1</span>結論摘要</h2>
+      <p class="lead">先看這五點，全篇精華濃縮於此。</p>
+      <div class="takeaways">
+        <div class="ta"><b>防「時間財」流失是亞洲第一痛點。</b> 店員偷算檯費、少報時間、私吞飲料錢。越南文章直指「約 80% 撞球店每天都在被員工偷錢」。<b>精確計時＋物聯網燈控（開檯才亮燈）＋防作弊稽核</b>是入場門票。</div>
+        <div class="ta"><b>中國已走到無人值守自助共享球房。</b> 靠 90%+ 行動支付與無人經濟紅利，掃碼開檯、遠端管理、自動分潤成主流，並疊加 AI 裁判／自動計分／精彩剪輯／人臉門禁。</div>
+        <div class="ta"><b>東南亞仍以「有人服務＋POS＋防作弊」為主。</b> 雲端與自助化落後中國一個世代，是明顯<b>藍海</b>。</div>
+        <div class="ta"><b>在地化是生死線。</b> 馬來西亞要 DuitNow QR＋LHDN 電子發票、越南要 HĐĐT、泰國要 PromptPay。支付＋稅務合規缺一不可。</div>
+        <div class="ta"><b>商業模式：不抽成。</b> 中國廠商普遍主打「軟體年費＋硬體買斷、<b>不抽成</b>」，是重要賣點（如一桉約 1000 元／2 年＋硬體 160 元／桌）。</div>
+      </div>
+    </section>
+
+    <!-- ============ FEATURES ============ -->
+    <section id="features">
+      <h2><span class="n">2</span>雲端 SaaS 功能藍圖</h2>
+      <p class="lead">完整功能模組。標 <span class="must">★</span> 為亞洲市場「必備門票級」功能。</p>
+      <div class="feat">
+        <div class="f"><div class="ico">⏱️</div><h4>計時計費 <span class="must">★</span></h4><ul><li>多球種費率（落袋/開倫/斯諾克）</li><li>多時段：假日·夜間·黃金·學生價</li><li>按分鐘 / block 精算</li><li>併檯·拆檯·暫停·押金開檯</li></ul></div>
+        <div class="f"><div class="ico">📡</div><h4>自助＋物聯網 <span class="must">★</span></h4><ul><li>掃碼開檯自動亮燈解鎖</li><li>智能燈控盒 6/8 路繼電器</li><li>球桿櫃·門禁·人臉識別</li><li>4G 流量卡，斷網可運作</li></ul></div>
+        <div class="f"><div class="ico">🧾</div><h4>收銀 POS 與支付</h4><ul><li>餐酒菸商品·庫存自動扣減</li><li>拆/合單·掛單·交接班</li><li>在地支付：微信/VNPay/DuitNow/PromptPay</li><li>電子發票合規（LHDN/HĐĐT）</li></ul></div>
+        <div class="f"><div class="ico">🎟️</div><h4>會員與行銷</h4><ul><li>儲值＋充贈·VIP 分級折扣</li><li>時長卡/次卡·優惠券</li><li>美團團購自動核銷（中國必備）</li><li>拉新·積分·自動發券</li></ul></div>
+        <div class="f"><div class="ico">👥</div><h4>員工與助教</h4><ul><li>角色權限分層·排班·考勤</li><li>績效與提成自動統計</li><li>助教（教練）預約與抽成</li></ul></div>
+        <div class="f"><div class="ico">📅</div><h4>線上預約</h4><ul><li>線上訂檯·訂金·候位</li><li>私人教學/賽事名額預約</li></ul></div>
+        <div class="f"><div class="ico">📊</div><h4>數據分析</h4><ul><li>營收拆分·分時上座率</li><li>客群畫像·券類占比·銷售榜</li><li>多店合併·遠端即時查帳</li></ul></div>
+        <div class="f"><div class="ico">🤖</div><h4>AI 增值體驗</h4><ul><li>AI 裁判·自動計分·犯規提醒</li><li>斜拍錄影·精彩剪輯·回放</li><li>社交分享·單人闖關·排行榜</li></ul></div>
+        <div class="f"><div class="ico">🛡️</div><h4>安防與風控</h4><ul><li>CCTV·防作弊計時稽核</li><li>操作日誌 audit log</li><li>雲端加密·權限分離</li></ul></div>
+      </div>
+    </section>
+
+    <!-- ============ CHINA ============ -->
+    <section id="china">
+      <h2><span class="n">3</span>中國市場</h2>
+      <p class="lead">全球最成熟、最捲的市場，主軸是「無人值守自助共享球房」。</p>
+      <div class="cards">
+        <div class="card"><span class="tag">旗艦・武漢</span><h4>球房雲掌櫃（德上雲）</h4><p>42+ 功能模組，掃碼開檯、球桿櫃、人臉識別、AI 裁判自動判罰／精彩剪輯、點單大屏、多店統籌。宣稱 10+ 加盟品牌、5000+ 門店。</p></div>
+        <div class="card"><span class="tag">數位化</span><h4>水滴智店（drip.im）</h4><p>開檯計費、自助開檯、預約、客戶營銷＋智能硬體。</p></div>
+        <div class="card"><span class="tag">多場景</span><h4>樂館+（ibuole）</h4><p>SaaS 燈控計費，手機管理；台球/棋牌/自習室/羽球/籃球通用。</p></div>
+        <div class="card"><span class="tag">一體機</span><h4>約個球啊（縱逑科技）</h4><p>球控燈控一體機＋商家後台＋小程序，主攻公寓/社區/酒吧混合業態無人投放。</p></div>
+        <div class="card"><span class="tag">低價・不抽成</span><h4>一桉科技</h4><p>約 1000 元／2 年、硬體 160 元／桌、不抽成，案例多。</p></div>
+        <div class="card"><span class="tag">連鎖/低預算</span><h4>商米・易捷・千佰・愛球客・威宏</h4><p>連鎖大店或低預算方案常見品牌。</p></div>
+      </div>
+      <div class="note">📈 <b>趨勢：</b>2025 年行動支付滲透率 &gt;90%、無人經濟規模破 3000 億元，自助掃碼撞球桌加速取代傳統投幣式；硬體標配 4G 流量卡；CSDN 上甚至有全開源自助球房系統，降低山寨門檻。「助教經濟」（教練排班/抽成）是中國特有重點。</div>
+    </section>
+
+    <!-- ============ SEA ============ -->
+    <section id="sea">
+      <h2><span class="n">4</span>東南亞市場</h2>
+      <p class="lead">越南最成熟、泰國次之（斯諾克為主）、馬來西亞合規型雲端領先。核心仍是「有人服務＋防作弊」。</p>
+      <h3>🇻🇳 越南 — 撞球文化極盛，競爭最激烈</h3>
+      <p class="lead" style="margin-bottom:12px">核心訴求 chống gian lận（防作弊）：按秒計時、串接電箱自動開關燈、100% 控管營收。</p>
+      <div class="cards">
+        <div class="card"><h4>POS365</h4><p>防作弊全方案，自動計時、視覺化檯位圖、權限管控、即時報表；主打免費＋電子稅務 0 元。</p></div>
+        <div class="card"><h4>KiotViet</h4><p>多行業 POS，介面友善、多時段定價；自動燈控整合較弱。</p></div>
+        <div class="card"><h4>Sapo</h4><p>適合連鎖，VIP 分級、教練/球桿租借加費、跨店金流。</p></div>
+        <div class="card"><h4>MISA CukCuk</h4><p>會計起家，財務精準、按桌型複雜定價、定量扣庫。</p></div>
+        <div class="card"><h4>PosApp</h4><p>跨裝置（POS/平板/手機），員工桌邊開檯點單。</p></div>
+        <div class="card"><h4>DanTriSoft</h4><p>低成本，永久免費離線版，基礎計時。Billbo / ONI / Keko / OXU / Ezibee 亦為在地專營。</p></div>
+      </div>
+      <h3>🇹🇭 泰國 — 以斯諾克為主</h3>
+      <div class="cards">
+        <div class="card"><h4>bkrent</h4><p>到府安裝整套「斯諾克桌程式＋開關燈控制盒＋防作弊計時＋訂檯」，全國服務。</p></div>
+        <div class="card"><h4>BookingWhale</h4><p>線上球檯預約系統，提升檯時、減少空檯。</p></div>
+        <div class="card"><h4>GPOS</h4><p>通用 F&amp;B POS，整合 GrabFood/外送，可延伸用於球館。</p></div>
+      </div>
+      <h3>🇲🇾 馬來西亞 — 合規型雲端領先</h3>
+      <div class="cards">
+        <div class="card"><span class="tag">合規最完整</span><h4>Snooker King（Vyrox）</h4><p>單一系統跑斯諾克/撞球/桌球，含即時檯位追蹤、動態定價、會員錢包、F&amp;B 櫃檯、智能檯燈控制、刷卡/支付連結、<b>DuitNow QR</b>、<b>LHDN 電子發票</b>。</p></div>
+      </div>
+    </section>
+
+    <!-- ============ WEST ============ -->
+    <section id="west">
+      <h2><span class="n">5</span>歐美 / 國際市場</h2>
+      <p class="lead">以「POS＋計時＋餐酒吧」為核心，自助/IoT 較少，但預約、聯賽/排名、報表成熟。可作功能基準。</p>
+      <div class="cards">
+        <div class="card"><h4>BilliardPOS</h4><p>雲端、按時計費、POS、庫存、多點營運、自動現金抽屜。</p></div>
+        <div class="card"><h4>CuetPOS</h4><p>餐酒吧＋球館全能 POS、計時、定價彈性、庫存。</p></div>
+        <div class="card"><h4>Billiardoo Plus</h4><p>專為撞球＋咖啡店設計的完整方案。</p></div>
+        <div class="card"><h4>Anolla</h4><p>線上訂檯/排程＋客戶 App，含私教與賽事名額。</p></div>
+        <div class="card"><h4>BilliardsManager</h4><p>即時檯位、開單、廚吧流程、候位、報表。</p></div>
+      </div>
+    </section>
+
+    <!-- ============ REGION COMPARE ============ -->
+    <section id="region">
+      <h2><span class="n">6</span>區域差異對照</h2>
+      <p class="lead">一眼看懂三大市場的打法差異。</p>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>維度</th><th>中國</th><th>東南亞（越/泰/馬）</th><th>歐美</th></tr></thead>
+          <tbody>
+            <tr><td>主流模式</td><td>無人自助共享</td><td>有人服務＋防作弊</td><td>有人＋餐酒吧</td></tr>
+            <tr><td>必備門票</td><td>掃碼開檯＋燈控＋團購核銷</td><td>精確計時＋燈控防作弊</td><td>POS＋計時＋預約</td></tr>
+            <tr><td>支付</td><td>微信/支付寶</td><td>VNPay/Momo·DuitNow·PromptPay</td><td>刷卡</td></tr>
+            <tr><td>合規</td><td>發票</td><td>越 HĐĐT、馬 LHDN</td><td>各國稅務</td></tr>
+            <tr><td>高階體驗</td><td>AI 裁判/剪輯（已商用）</td><td>少見</td><td>聯賽/排名</td></tr>
+            <tr><td>收費</td><td>年費＋硬體、<b>不抽成</b></td><td>免費/離線版常見</td><td>訂閱</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============ MATRIX ============ -->
+    <section id="matrix">
+      <h2><span class="n">7</span>競品功能對照矩陣</h2>
+      <p class="lead">功能模組 × 區域代表廠商。</p>
+      <div class="legend">
+        <span><b class="yes">✓</b>具備</span>
+        <span><b class="partial">△</b>部分/需加購/較弱</span>
+        <span><b class="no">✗</b>不具備/未見</span>
+        <span><b class="na">—</b>不適用</span>
+      </div>
+      <div class="tbl">
+        <table>
+          <thead><tr>
+            <th>功能模組</th>
+            <th class="c">球房雲掌櫃<br><small>中</small></th>
+            <th class="c">POS365<br><small>越</small></th>
+            <th class="c">Snooker King<br><small>馬</small></th>
+            <th class="c">bkrent<br><small>泰</small></th>
+            <th class="c">BilliardPOS<br><small>歐美</small></th>
+          </tr></thead>
+          <tbody>
+            <tr><td>多球種費率</td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td></tr>
+            <tr><td>多時段/黃金/學生價</td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk partial">△</span></td><td class="c"><span class="mk yes">✓</span></td></tr>
+            <tr><td>按分鐘 / block 精算</td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td></tr>
+            <tr><td>併檯/拆檯/暫停</td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk partial">△</span></td><td class="c"><span class="mk partial">△</span></td><td class="c"><span class="mk yes">✓</span></td></tr>
+            <tr><td><b>掃碼自助開檯</b></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk partial">△</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk no">✗</span></td><td class="c"><span class="mk partial">△</span></td></tr>
+            <tr><td><b>IoT 燈控/電控盒</b></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk partial">△</span></td></tr>
+            <tr><td>球桿櫃/門禁/人臉</td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk no">✗</span></td><td class="c"><span class="mk partial">△</span></td><td class="c"><span class="mk no">✗</span></td><td class="c"><span class="mk no">✗</span></td></tr>
+            <tr><td>POS 餐酒＋庫存</td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk partial">△</span></td><td class="c"><span class="mk yes">✓</span></td></tr>
+            <tr><td>在地行動支付</td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk partial">△</span></td><td class="c"><span class="mk yes">✓</span></td></tr>
+            <tr><td><b>電子發票合規</b></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk partial">△</span></td><td class="c"><span class="mk partial">△</span></td></tr>
+            <tr><td>會員儲值＋充贈</td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk partial">△</span></td><td class="c"><span class="mk partial">△</span></td></tr>
+            <tr><td>團購核銷（美團等）</td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk na">—</span></td><td class="c"><span class="mk na">—</span></td><td class="c"><span class="mk na">—</span></td><td class="c"><span class="mk na">—</span></td></tr>
+            <tr><td>線上預約/候位</td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk partial">△</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td></tr>
+            <tr><td>助教/教練抽成</td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk partial">△</span></td><td class="c"><span class="mk partial">△</span></td><td class="c"><span class="mk no">✗</span></td><td class="c"><span class="mk no">✗</span></td></tr>
+            <tr><td>員工排班/績效提成</td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk partial">△</span></td><td class="c"><span class="mk partial">△</span></td></tr>
+            <tr><td>多店/連鎖合併報表</td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk no">✗</span></td><td class="c"><span class="mk yes">✓</span></td></tr>
+            <tr><td>數據分析/客群畫像</td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk partial">△</span></td><td class="c"><span class="mk no">✗</span></td><td class="c"><span class="mk partial">△</span></td></tr>
+            <tr><td><b>AI 裁判/自動計分</b></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk no">✗</span></td><td class="c"><span class="mk no">✗</span></td><td class="c"><span class="mk no">✗</span></td><td class="c"><span class="mk no">✗</span></td></tr>
+            <tr><td>精彩剪輯/回放/社交</td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk no">✗</span></td><td class="c"><span class="mk no">✗</span></td><td class="c"><span class="mk no">✗</span></td><td class="c"><span class="mk no">✗</span></td></tr>
+            <tr><td>防作弊稽核/操作日誌</td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk partial">△</span></td></tr>
+            <tr><td>真雲端多租戶 SaaS</td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk partial">△</span></td><td class="c"><span class="mk yes">✓</span></td></tr>
+            <tr><td>斷網可運作（4G/離線）</td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk partial">△</span></td><td class="c"><span class="mk partial">△</span></td><td class="c"><span class="mk yes">✓</span></td><td class="c"><span class="mk partial">△</span></td></tr>
+          </tbody>
+          <caption>依各廠商官網與產業文章整理；△/✗ 為依公開資訊之觀察，實際以廠商報價為準。</caption>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============ STRATEGY ============ -->
+    <section id="strategy">
+      <h2><span class="n">8</span>我們的切入策略（缺口＝機會）</h2>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>缺口觀察</th><th>機會</th><th>我方做法</th></tr></thead>
+          <tbody>
+            <tr><td>東南亞自助化落後中國一個世代</td><td>藍海</td><td>把中國「掃碼開檯＋燈控」標配帶進越/泰/馬</td></tr>
+            <tr><td>在地競品多為單機/半雲端</td><td>差異化</td><td>真・多租戶雲端＋遠端即時管理＋跨店跨幣別</td></tr>
+            <tr><td>各國支付/發票分裂</td><td>護城河</td><td>模組化在地化（每進一國補支付＋發票）</td></tr>
+            <tr><td>AI 裁判僅中國高端商用</td><td>高端差異點</td><td>第三階段切入，做品牌與高端球房賣點</td></tr>
+            <tr><td>中國紅海＋開源氾濫</td><td>風險</td><td>避開中國正面競爭，或只輸出高階 AI 體驗</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note">🎯 <b>定位：</b>「真雲端 SaaS ＋ 在地化合規 ＋ 中國級自助/燈控標配」三者疊加，是現有任一單一競品都尚未在東南亞同時補齊的位置。</div>
+    </section>
+
+    <!-- ============ MVP ============ -->
+    <section id="mvp">
+      <h2><span class="n">9</span>MVP 範圍（Phase 1）</h2>
+      <div class="cards">
+        <div class="card"><span class="tag">必做 1</span><h4>計時計費引擎</h4><p>多球種/多時段/block、併拆檯、押金預付、抹零。</p></div>
+        <div class="card"><span class="tag">必做 2</span><h4>IoT 燈控盒</h4><p>開檯通電亮燈、結檯斷電；雲端＋本地雙控；斷網仍可開檯。</p></div>
+        <div class="card"><span class="tag">必做 3</span><h4>掃碼自助開檯</h4><p>掃 QR → 小程序/H5 → 付款/扣會員 → 自動亮燈。</p></div>
+        <div class="card"><span class="tag">必做 4</span><h4>POS＋庫存</h4><p>商品銷售自動扣庫、併入檯費、拆/合單、交接班。</p></div>
+        <div class="card"><span class="tag">必做 5</span><h4>會員儲值＋充贈</h4><p>儲值錢包、VIP 折扣、消費紀錄。</p></div>
+        <div class="card"><span class="tag">必做 6</span><h4>基礎報表＋防作弊</h4><p>日營收/上座率；不可竄改 audit log、權限分層。</p></div>
+      </div>
+      <div class="note">🚫 <b>MVP 不做：</b>AI 裁判/剪輯（P3）、助教抽成/團購核銷/預約候位（P2）、連鎖總部深度進銷存（P2）。</div>
+
+      <h3>🛠 互動範圍規劃器</h3>
+      <p class="lead">勾選你想納入的模組，下方即時估算開發量（人週為粗估，僅供排期參考）。P1 為收單門票，預設已選。</p>
+      <div class="toolbar">
+        <button class="btn primary" onclick="scopePreset('mvp')">只做 MVP（P1）</button>
+        <button class="btn" onclick="scopePreset('all')">全選</button>
+        <button class="btn" onclick="scopePreset('reset')">清空</button>
+      </div>
+      <div class="scope-grid" id="scopeGrid">
+        <div class="scope-col" data-phase="1">
+          <h4>P1 收單門票 <span class="ph-tag ph1">1–3 月</span></h4>
+          <div class="cap">亞洲市場最小可行集合</div>
+          <label class="scope-item"><input type="checkbox" data-wk="6" data-phase="1" checked><span>計時計費引擎</span><span class="wk">6 wk</span></label>
+          <label class="scope-item"><input type="checkbox" data-wk="5" data-phase="1" checked><span>IoT 燈控盒整合</span><span class="wk">5 wk</span></label>
+          <label class="scope-item"><input type="checkbox" data-wk="4" data-phase="1" checked><span>掃碼自助開檯</span><span class="wk">4 wk</span></label>
+          <label class="scope-item"><input type="checkbox" data-wk="5" data-phase="1" checked><span>POS＋庫存</span><span class="wk">5 wk</span></label>
+          <label class="scope-item"><input type="checkbox" data-wk="3" data-phase="1" checked><span>會員儲值＋充贈</span><span class="wk">3 wk</span></label>
+          <label class="scope-item"><input type="checkbox" data-wk="4" data-phase="1" checked><span>Edge 離線續營</span><span class="wk">4 wk</span></label>
+          <label class="scope-item"><input type="checkbox" data-wk="3" data-phase="1" checked><span>基礎報表＋防作弊稽核</span><span class="wk">3 wk</span></label>
+        </div>
+        <div class="scope-col" data-phase="2">
+          <h4>P2 可複製收訂閱 <span class="ph-tag ph2">3–6 月</span></h4>
+          <div class="cap">擴張與在地化</div>
+          <label class="scope-item"><input type="checkbox" data-wk="5" data-phase="2"><span>在地支付 adapter（首國）</span><span class="wk">5 wk</span></label>
+          <label class="scope-item"><input type="checkbox" data-wk="5" data-phase="2"><span>電子發票合規（首國）</span><span class="wk">5 wk</span></label>
+          <label class="scope-item"><input type="checkbox" data-wk="4" data-phase="2"><span>線上預約＋候位</span><span class="wk">4 wk</span></label>
+          <label class="scope-item"><input type="checkbox" data-wk="4" data-phase="2"><span>助教/教練排班抽成</span><span class="wk">4 wk</span></label>
+          <label class="scope-item"><input type="checkbox" data-wk="4" data-phase="2"><span>多店合併報表</span><span class="wk">4 wk</span></label>
+          <label class="scope-item"><input type="checkbox" data-wk="3" data-phase="2"><span>優惠券/團購核銷</span><span class="wk">3 wk</span></label>
+        </div>
+        <div class="scope-col" data-phase="3">
+          <h4>P3 差異化 <span class="ph-tag ph3">6–12 月</span></h4>
+          <div class="cap">高端與品牌賣點</div>
+          <label class="scope-item"><input type="checkbox" data-wk="10" data-phase="3"><span>AI 裁判／自動計分</span><span class="wk">10 wk</span></label>
+          <label class="scope-item"><input type="checkbox" data-wk="6" data-phase="3"><span>精彩剪輯／回放／分享</span><span class="wk">6 wk</span></label>
+          <label class="scope-item"><input type="checkbox" data-wk="5" data-phase="3"><span>人臉門禁／球桿櫃</span><span class="wk">5 wk</span></label>
+          <label class="scope-item"><input type="checkbox" data-wk="4" data-phase="3"><span>連鎖總部進銷存</span><span class="wk">4 wk</span></label>
+          <label class="scope-item"><input type="checkbox" data-wk="5" data-phase="3"><span>數據分析／客群畫像</span><span class="wk">5 wk</span></label>
+        </div>
+      </div>
+      <div class="scope-sum">
+        <div class="stat"><div class="v" id="sStat0">7</div><div class="l">已選模組數</div></div>
+        <div class="stat alt"><div class="v" id="sStat1">30</div><div class="l">估計開發量（人週）</div></div>
+        <div class="stat alt"><div class="v" id="sStat2">~7.5</div><div class="l">單人約需月數</div></div>
+        <div class="stat alt"><div class="v" id="sStat3">~3.0</div><div class="l">3 人團隊約需月數</div></div>
+      </div>
+    </section>
+
+    <!-- ============ ARCH ============ -->
+    <section id="arch">
+      <h2><span class="n">10</span>系統架構總覽</h2>
+      <p class="lead">真・多租戶雲端、在地化可插拔、斷網仍能營業、防作弊為第一公民。</p>
+      <pre class="arch">┌───────────────────────── 用戶端 Clients ─────────────────────────┐
+│  顧客小程序/H5    店員 PWA/Pad    老闆 App    收銀/點單大屏        │
+└───────────────┬───────────────────────────────┬──────────────────┘
+                │ HTTPS / WSS                    │
+         ┌──────▼──────┐                  ┌──────▼──────┐
+         │ API Gateway │                  │ Realtime WS │  檯位即時推播
+         │ REST + Auth │                  │  pub/sub    │
+         └──────┬──────┘                  └──────┬──────┘
+    ┌───────────▼─────────────── 應用服務層 (多租戶 tenant_id) ─────────┐
+    │  計費 │ 訂單/POS │ 會員錢包 │ 設備管理 │ 報表 │ 稽核 audit        │
+    └──┬──────────┬─────────┬─────────┬──────────────┬──────────────────┘
+   ┌──▼──┐   ┌────▼───┐ ┌───▼───┐ ┌───▼────┐   ┌─────▼──────┐
+   │ PG  │   │ Redis  │ │物件儲存│ │  MQTT  │   │ 在地化介接  │
+   │主資料│   │快取/鎖 │ │       │ │ Broker │   │ 支付/發票    │
+   └─────┘   └────────┘ └───────┘ └───┬────┘   └─────┬──────┘
+                                       │ TLS          │ VNPay/DuitNow/
+                              ┌────────▼────────┐     │ PromptPay/微信
+                              │ 邊緣閘道 Edge   │     │ HĐĐT/LHDN
+                              │ (店內·離線續營) │
+                              └────────┬────────┘
+                                       │ LAN  MQTT/Modbus
+                              ┌────────▼────────┐
+                              │  燈控盒 ×N(每桌) │ → 繼電器→桌燈/電源
+                              └─────────────────┘</pre>
+      <h3>關鍵設計決策</h3>
+      <div class="cards">
+        <div class="card"><h4>多租戶</h4><p>單庫＋tenant_id 行級隔離（Postgres RLS），MVP 成本最低；規模化後再分庫。</p></div>
+        <div class="card"><h4>邊緣閘道 Edge</h4><p>每店一台小主機，快取費率與會員餘額；<b>斷網仍能開檯/結檯/離線收款</b>，復網補同步。</p></div>
+        <div class="card"><h4>設備走 MQTT</h4><p>燈控盒↔Edge↔雲端，輕量即時、可離線佇列、QoS 保證。</p></div>
+        <div class="card"><h4>在地化介接層</h4><p>支付與電子發票全部抽象為 adapter，新國家只加 adapter，不動核心。</p></div>
+      </div>
+    </section>
+
+    <!-- ============ IOT ============ -->
+    <section id="iot">
+      <h2><span class="n">11</span>IoT 燈控盒設計（核心硬體）</h2>
+      <p class="lead">「開檯才亮燈」是亞洲防作弊的物理基礎，也是與純軟體競品的硬差異。</p>
+      <div class="cards">
+        <div class="card"><h4>硬體規格</h4><p>ESP32 主控（Wi-Fi+BLE）；6/8 路繼電器；Wi-Fi 為主、4G/RS-485 備援；實體按鈕人工接管；斷電狀態記憶；每盒唯一憑證＋TLS。</p></div>
+        <div class="card"><h4>通訊拓撲</h4><p>雲端 MQTT → Edge → 燈控盒，回 ACK。斷網時 Edge 直接控盒、交易記本地、復網補傳。</p></div>
+      </div>
+      <h3>MQTT Topic（多租戶隔離）</h3>
+      <pre class="code">t/{tenant_id}/store/{store_id}/dev/{device_id}/cmd     <span class="k"># 雲→設備 指令</span>
+t/{tenant_id}/store/{store_id}/dev/{device_id}/state   <span class="k"># 設備→雲 狀態</span>
+t/{tenant_id}/store/{store_id}/dev/{device_id}/hb      <span class="k"># 心跳 離線偵測</span></pre>
+      <h3>開檯指令（雲端 → 燈控盒）</h3>
+      <pre class="code">{
+  "msg_id": "c-9f3a...",          <span class="k">// 冪等鍵, 設備去重</span>
+  "action": "ON",                 <span class="k">// ON / OFF / PULSE</span>
+  "relay": 1,                     <span class="k">// 第幾路繼電器</span>
+  "session_id": "S-20260624-007", <span class="k">// 對應一筆開檯</span>
+  "expire_s": 14400,              <span class="k">// 逾時自動斷, 防忘關</span>
+  "sign": "HMAC-SHA256(payload, device_key)"
+}</pre>
+      <h3>防作弊與安全機制</h3>
+      <div class="feat">
+        <div class="f"><h4>① 狀態以雲端 session 為準</h4><ul><li>燈亮必對應有效 session；對不上 → 告警「未授權亮燈」</li></ul></div>
+        <div class="f"><h4>② 心跳離線偵測</h4><ul><li>斷線即後台標紅，防「拔網私下營業」</li></ul></div>
+        <div class="f"><h4>③ 簽章＋冪等</h4><ul><li>HMAC 防偽造；msg_id 去重防重放</li></ul></div>
+        <div class="f"><h4>④ 逾時自動斷電</h4><ul><li>expire_s 安全上限，防忘記結檯漏計</li></ul></div>
+        <div class="f"><h4>⑤ 手動操作回報</h4><ul><li>實體按鈕也回報雲端留痕（人工接管 ≠ 不記帳）</li></ul></div>
+        <div class="f"><h4>⑥ 每日對帳</h4><ul><li>「亮燈時長 vs 計費時長」自動比對，差異即風險清單</li></ul></div>
+      </div>
+    </section>
+
+    <!-- ============ ROADMAP ============ -->
+    <section id="roadmap">
+      <h2><span class="n">12</span>落地路線圖</h2>
+      <div class="road">
+        <div class="ph"><div class="when">P0 · 0–1 月</div><h4>燈控盒打樣</h4><p>ESP32＋繼電器、MQTT 跑通、單店單桌 demo。驗證「開檯亮燈、結檯斷電、斷網續控」。</p></div>
+        <div class="ph"><div class="when">P1 · 1–3 月</div><h4>收單門票</h4><p>計費引擎＋POS＋會員＋Edge 離線＋基礎報表，單店上線，找 1–2 家種子店。</p></div>
+        <div class="ph"><div class="when">P2 · 3–6 月</div><h4>可複製收訂閱</h4><p>自助掃碼＋在地支付/發票 adapter（首國）＋多店報表。</p></div>
+        <div class="ph"><div class="when">P3 · 6–12 月</div><h4>差異化</h4><p>助教抽成、預約候位、AI 裁判/剪輯（高端選配）。</p></div>
+      </div>
+    </section>
+
+    <!-- ============ CALCULATOR ============ -->
+    <section id="calculator">
+      <h2><span class="n">14</span>報價試算（我方商業模式）</h2>
+      <p class="lead">對標市場「<b>軟體訂閱＋硬體買斷、不抽成</b>」的模式試算。單價可直接修改，幣別預設參考值來自研究（如一桉硬體 ~160 元/桌）。<b>抽成永遠 0%。</b></p>
+      <div class="calc">
+        <!-- inputs -->
+        <div class="panel">
+          <div class="field">
+            <label>幣別</label>
+            <div class="seg" id="curSeg">
+              <button data-cur="NT$" class="on">NT$ 新台幣</button>
+              <button data-cur="RMB">RMB 人民幣</button>
+              <button data-cur="US$">US$ 美元</button>
+            </div>
+          </div>
+          <div class="row2">
+            <div class="field"><label>門市數量</label><input type="number" id="inStores" value="1" min="1"></div>
+            <div class="field"><label>每店球桌數</label><input type="number" id="inTables" value="10" min="1"></div>
+          </div>
+          <div class="field">
+            <label>方案分級 <span class="hint">（決定每桌月費）</span></label>
+            <div class="seg" id="planSeg">
+              <button data-plan="basic" data-rate="150">基礎</button>
+              <button data-plan="std" data-rate="250" class="on">標準</button>
+              <button data-plan="pro" data-rate="400">旗艦</button>
+            </div>
+          </div>
+          <div class="row2">
+            <div class="field"><label>每桌月費 <span class="hint">/桌/月</span></label><input type="number" id="inSoft" value="250" min="0"></div>
+            <div class="field"><label>燈控盒（一次性）<span class="hint">/桌</span></label><input type="number" id="inBox" value="1500" min="0"></div>
+          </div>
+          <div class="row2">
+            <div class="field"><label>Edge 閘道（一次性）<span class="hint">/店</span></label><input type="number" id="inEdge" value="6000" min="0"></div>
+            <div class="field"><label>訂閱年限 <span class="hint">年</span></label><input type="number" id="inYears" value="1" min="1"></div>
+          </div>
+        </div>
+        <!-- outputs -->
+        <div class="panel calc-out">
+          <div class="big">
+            <div class="l">首年總成本（硬體＋首年軟體）</div>
+            <div class="v"><span id="oCur1">NT$</span> <span id="oFirstYear">—</span></div>
+          </div>
+          <div class="ln"><span>球桌總數</span><span id="oTotTables">—</span></div>
+          <div class="ln"><span>一次性硬體：燈控盒</span><span id="oBox">—</span></div>
+          <div class="ln"><span>一次性硬體：Edge 閘道</span><span id="oEdge">—</span></div>
+          <div class="ln"><span>硬體小計（買斷）</span><span id="oHw">—</span></div>
+          <div class="ln"><span>軟體月費（全店合計）</span><span id="oMonthly">—</span></div>
+          <div class="ln"><span>軟體年費</span><span id="oYearly">—</span></div>
+          <div class="ln"><span>平台抽成</span><span class="free">0% 不抽成</span></div>
+          <div class="ln tot"><span id="oYearsLbl">第 1 年起每年續訂</span><span id="oRecurring">—</span></div>
+        </div>
+      </div>
+      <div class="note">💡 此為<b>我方提案定價模型</b>（非競品報價），單價為可調整的假設值；實際應依硬體 BOM、市場與毛利目標再校準。研究中競品參考：一桉約軟體 1000 元/2 年＋硬體 160 元/桌、小豬基礎版約 2500 元/年。</div>
+    </section>
+
+    <!-- ============ SOURCES ============ -->
+    <section id="sources">
+      <h2><span class="n">13</span>資料來源</h2>
+      <p class="lead">皆為可驗證的廠商官網或產業文章原始頁面。</p>
+      <div class="src">
+        <h4>中國</h4>
+        <a href="https://www.deshangcloud.com/" target="_blank" rel="noopener">球房雲掌櫃（德上雲）</a>
+        <a href="https://zd.drip.im/landing/billiard" target="_blank" rel="noopener">水滴智店</a>
+        <a href="http://www.ibuole.com/" target="_blank" rel="noopener">樂館+</a>
+        <a href="http://www.yuegeqiua.com/home/index/product" target="_blank" rel="noopener">約個球啊（縱逑科技）</a>
+        <a href="https://www.sohu.com/a/904716583_100275720" target="_blank" rel="noopener">無人自助共享台球室方案（搜狐）</a>
+        <a href="https://www.sohu.com/a/962633540_100275720" target="_blank" rel="noopener">台球室燈控方案解析（搜狐）</a>
+        <a href="https://zhuanlan.zhihu.com/p/1947372171740582728" target="_blank" rel="noopener">2025 自助掃碼台球桌五大廠商（知乎）</a>
+        <a href="https://blog.csdn.net/m0_62160987/article/details/134353722" target="_blank" rel="noopener">開源自助球房系統（CSDN）</a>
+        <h4>越南</h4>
+        <a href="https://www.pos365.vn/phan-mem-quan-ly-bida-8166.html" target="_blank" rel="noopener">POS365「Top 6 撞球管理軟體」</a>
+        <a href="http://billbo.vn/" target="_blank" rel="noopener">Billbo</a>
+        <a href="https://oni.vn/solutions/billiards" target="_blank" rel="noopener">ONI ERP 撞球方案</a>
+        <a href="https://www.sapo.vn/phan-mem-quan-ly-quan-bida.html" target="_blank" rel="noopener">Sapo</a>
+        <a href="https://www.dantrisoft.com/2022/03/top-4-phan-mem-quan-ly-bida-mien-phi-tot-nhat.html" target="_blank" rel="noopener">DanTriSoft</a>
+        <a href="https://citgroup.vn/phan-mem-tinh-tien-bida.html" target="_blank" rel="noopener">CITGroup</a>
+        <a href="https://keko.vn/phan-mem-quan-ly-bida-keko-billiard.html" target="_blank" rel="noopener">Keko Billiard</a>
+        <a href="https://bida.oxu.vn/" target="_blank" rel="noopener">OXU</a>
+        <a href="https://ezibee.io/" target="_blank" rel="noopener">Ezibee</a>
+        <h4>泰國</h4>
+        <a href="https://www.bkrent.com/article/359" target="_blank" rel="noopener">bkrent（斯諾克程式＋燈控）</a>
+        <a href="https://bookingwhale.co/blog/pool-snooker-hall-booking-system/" target="_blank" rel="noopener">BookingWhale 訂檯系統</a>
+        <a href="https://gpos.co.th/" target="_blank" rel="noopener">GPOS</a>
+        <h4>馬來西亞</h4>
+        <a href="https://www.vyrox.com/snooker-software-billiard-system.php" target="_blank" rel="noopener">Snooker King（Vyrox）</a>
+        <h4>歐美 / 國際</h4>
+        <a href="https://billiardpos.net/" target="_blank" rel="noopener">BilliardPOS</a>
+        <a href="https://billiardspos.com/" target="_blank" rel="noopener">CuetPOS</a>
+        <a href="https://www.definitivesynergy.com/billiard-pos-software" target="_blank" rel="noopener">CuetPOS（Definitive Synergy）</a>
+        <a href="http://www.billiardoo.com/" target="_blank" rel="noopener">Billiardoo</a>
+        <a href="https://anolla.com/en/billiard-software" target="_blank" rel="noopener">Anolla</a>
+        <a href="https://billiardsmanager.com/" target="_blank" rel="noopener">BilliardsManager</a>
+        <a href="https://wisesmallbusiness.com/pool-hall-pos-systems/" target="_blank" rel="noopener">評測：WiseSmallBusiness</a>
+        <a href="https://posquote.com/billiard-pos-systems/" target="_blank" rel="noopener">評測：POSQuote</a>
+      </div>
+    </section>
+
+    <footer>
+      APEX 撞球店雲端 SaaS 研究 · 詳細內容見 <code>01-市場研究報告.md</code>、<code>02-競品功能對照矩陣.md</code>、<code>03-MVP規格與技術架構.md</code>
+    </footer>
+  </main>
+</div>
+
+<script>
+/* ---------- Scope planner ---------- */
+const scopeBoxes = () => [...document.querySelectorAll('#scopeGrid input[type=checkbox]')];
+function updateScope(){
+  const boxes = scopeBoxes();
+  let count=0, weeks=0;
+  boxes.forEach(b=>{ if(b.checked){ count++; weeks+=Number(b.dataset.wk||0); } });
+  document.getElementById('sStat0').textContent = count;
+  document.getElementById('sStat1').textContent = weeks;
+  // 1 dev ~ 4.33 wk/month, assume 1 person; team of 3 at 70% parallel efficiency
+  const solo = weeks/4.33;
+  const team = weeks/(3*0.7)/4.33;
+  document.getElementById('sStat2').textContent = '~'+solo.toFixed(1);
+  document.getElementById('sStat3').textContent = '~'+team.toFixed(1);
+}
+function scopePreset(mode){
+  scopeBoxes().forEach(b=>{
+    const p = b.dataset.phase;
+    if(mode==='mvp') b.checked = (p==='1');
+    else if(mode==='all') b.checked = true;
+    else if(mode==='reset') b.checked = false;
+  });
+  updateScope();
+}
+document.getElementById('scopeGrid').addEventListener('change', updateScope);
+
+/* ---------- Pricing calculator ---------- */
+const $ = id => document.getElementById(id);
+let CUR = 'NT$';
+const CUR_DEFAULTS = {            // [soft/table/mo, box/table, edge/store]
+  'NT$': [250, 1500, 6000],
+  'RMB': [60, 350, 1400],
+  'US$': [8, 50, 200]
+};
+const PLAN_BY_CUR = {             // basic/std/pro per-table monthly
+  'NT$': {basic:150, std:250, pro:400},
+  'RMB': {basic:35,  std:60,  pro:95},
+  'US$': {basic:5,   std:8,   pro:13}
+};
+function fmt(n){ return Math.round(n).toLocaleString('en-US'); }
+function currentPlan(){ return document.querySelector('#planSeg button.on').dataset.plan; }
+function calc(){
+  const stores=+$('inStores').value||0, tpr=+$('inTables').value||0;
+  const soft=+$('inSoft').value||0, box=+$('inBox').value||0, edge=+$('inEdge').value||0, years=+$('inYears').value||1;
+  const totTables = stores*tpr;
+  const hwBox = totTables*box, hwEdge = stores*edge, hw = hwBox+hwEdge;
+  const monthly = totTables*soft, yearly = monthly*12;
+  const firstYear = hw + yearly;
+  $('oCur1').textContent = CUR;
+  $('oTotTables').textContent = fmt(totTables)+' 桌';
+  $('oBox').textContent = CUR+' '+fmt(hwBox);
+  $('oEdge').textContent = CUR+' '+fmt(hwEdge);
+  $('oHw').textContent = CUR+' '+fmt(hw);
+  $('oMonthly').textContent = CUR+' '+fmt(monthly);
+  $('oYearly').textContent = CUR+' '+fmt(yearly);
+  $('oFirstYear').textContent = fmt(firstYear);
+  if(years>1){
+    $('oYearsLbl').textContent = years+' 年總持有成本（TCO）';
+    $('oRecurring').textContent = CUR+' '+fmt(hw + yearly*years);
+  } else {
+    $('oYearsLbl').textContent = '第 2 年起每年續訂';
+    $('oRecurring').textContent = CUR+' '+fmt(yearly);
+  }
+}
+// plan selector
+$('planSeg').addEventListener('click', e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  document.querySelectorAll('#planSeg button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  $('inSoft').value = PLAN_BY_CUR[CUR][b.dataset.plan];
+  calc();
+});
+// currency selector
+$('curSeg').addEventListener('click', e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  document.querySelectorAll('#curSeg button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  CUR = b.dataset.cur;
+  const d = CUR_DEFAULTS[CUR];
+  $('inSoft').value = PLAN_BY_CUR[CUR][currentPlan()];
+  $('inBox').value = d[1];
+  $('inEdge').value = d[2];
+  calc();
+});
+['inStores','inTables','inSoft','inBox','inEdge','inYears'].forEach(id=>$(id).addEventListener('input', calc));
+
+updateScope();
+calc();
+</script>
+
+<style>#apex-home{position:fixed;left:18px;bottom:18px;z-index:40;display:inline-flex;align-items:center;gap:6px;
+  background:#084d2a;color:#dff3e6;font-size:13px;font-weight:600;padding:9px 14px;border-radius:999px;
+  text-decoration:none;box-shadow:0 6px 18px rgba(0,0,0,.22);font-family:"Segoe UI","PingFang TC",sans-serif}
+#apex-home:hover{background:#0b6b3a}
+@media(max-width:980px){#apex-home{left:12px;bottom:12px}}</style>
+<a id="apex-home" href="../">← 研究中心</a>
+
+</body>
+</html>

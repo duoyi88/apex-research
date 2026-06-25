@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+
+<!-- APEX access gate (soft, client-side) -->
+<style>
+  html.apexlock body>*:not(#apex-gate){display:none!important}
+  html.apexlock{overflow:hidden}
+  #apex-gate{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#084d2a 0%,#0b6b3a 55%,#12894b 100%);
+    font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft JhengHei",sans-serif}
+  #apex-gate .gbox{width:min(92vw,360px);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);
+    border-radius:18px;padding:34px 30px 28px;box-shadow:0 24px 60px rgba(0,0,0,.32);backdrop-filter:blur(8px);
+    text-align:center;color:#eafaf0}
+  #apex-gate .gicon{width:54px;height:54px;border-radius:50%;margin:0 auto 14px;display:flex;align-items:center;
+    justify-content:center;font-size:26px;background:#e7b53c;color:#3a2c00;font-weight:800;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+  #apex-gate h2{margin:0 0 4px;font-size:21px;font-weight:800;letter-spacing:.5px;color:#fff}
+  #apex-gate p{margin:0 0 20px;font-size:13px;color:#bfe6ce}
+  #apex-gate input{width:100%;padding:13px 15px;border-radius:10px;border:1px solid rgba(255,255,255,.25);
+    background:rgba(0,0,0,.18);color:#fff;font-size:18px;text-align:center;letter-spacing:6px;outline:none;
+    transition:border-color .15s}
+  #apex-gate input:focus{border-color:#e7b53c}
+  #apex-gate button{width:100%;margin-top:12px;padding:12px;border:none;border-radius:10px;cursor:pointer;
+    background:#e7b53c;color:#3a2c00;font-size:15px;font-weight:800;letter-spacing:1px;transition:filter .15s}
+  #apex-gate button:hover{filter:brightness(1.06)}
+  #apex-gate .ge{display:none;margin-top:12px;font-size:12.5px;color:#ffd7d2}
+  #apex-gate.bad .gbox{animation:apexshake .42s}
+  @keyframes apexshake{10%,90%{transform:translateX(-2px)}30%,70%{transform:translateX(5px)}50%{transform:translateX(-7px)}}
+</style>
+<script>
+(function(){
+  var KEY='apex_gate_v1', HASH=193354864;
+  function hf(s){var x=5381;for(var i=0;i<s.length;i++){x=(((x*33)&0xffffffff)^s.charCodeAt(i))>>>0;}return x;}
+  function ok(){try{return sessionStorage.getItem(KEY)==='1';}catch(e){return false;}}
+  if(ok())return;
+  var H=document.documentElement; H.classList.add('apexlock');
+  function build(){
+    if(document.getElementById('apex-gate'))return;
+    var o=document.createElement('div'); o.id='apex-gate';
+    o.innerHTML='<div class="gbox"><div class="gicon">&#9899;</div>'+
+      '<h2>APEX 研究中心</h2><p>請輸入通行密碼以檢視內容</p>'+
+      '<input type="password" inputmode="numeric" autocomplete="off" aria-label="password" placeholder="•••">'+
+      '<button type="button">進入</button>'+
+      '<div class="ge">密碼錯誤，請再試一次</div></div>';
+    (document.body||H).appendChild(o);
+    var inp=o.querySelector('input'), btn=o.querySelector('button'), err=o.querySelector('.ge');
+    function submit(){
+      if(hf((inp.value||'').trim())===HASH){
+        try{sessionStorage.setItem(KEY,'1');}catch(e){}
+        o.parentNode&&o.parentNode.removeChild(o); H.classList.remove('apexlock');
+      }else{
+        o.classList.add('bad'); err.style.display='block'; inp.value=''; inp.focus();
+        setTimeout(function(){o.classList.remove('bad');},460);
+      }
+    }
+    btn.addEventListener('click',submit);
+    inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();submit();}});
+    setTimeout(function(){inp.focus();},30);
+  }
+  if(document.body){build();}
+  else{document.addEventListener('DOMContentLoaded',build);
+    // also try ASAP so the overlay paints before body content
+    var t=setInterval(function(){if(document.body){clearInterval(t);build();}},8);}
+})();
+</script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>撞球賽制與賽務研究 · APEX</title>
+<style>
+  :root{
+    --felt:#0b6b3a; --felt-dark:#084d2a; --felt-light:#12894b;
+    --ink:#1a2230; --muted:#5b6776; --line:#e3e8ee; --bg:#f6f8fa;
+    --card:#ffffff; --accent:#e7b53c; --chalk:#2b6cb0;
+    --radius:14px; --shadow:0 1px 3px rgba(16,32,55,.06),0 8px 24px rgba(16,32,55,.06);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft JhengHei",sans-serif;
+    color:var(--ink);background:var(--bg);line-height:1.78;-webkit-font-smoothing:antialiased}
+  a{color:var(--chalk);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  #bar{position:fixed;top:0;left:0;height:3px;width:0;z-index:50;
+    background:linear-gradient(90deg,var(--accent),var(--felt-light))}
+
+  .wrap{display:grid;grid-template-columns:282px 1fr;max-width:1320px;margin:0 auto}
+  nav.side{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;
+    background:var(--felt-dark);color:#dff3e6;padding:24px 16px 40px}
+  nav.side .brand{font-weight:800;font-size:20px;color:#fff;letter-spacing:.5px}
+  nav.side .brand span{color:var(--accent)}
+  nav.side .sub{font-size:12px;color:#9fd9b8;margin:2px 0 14px}
+  nav.side .home{display:inline-flex;align-items:center;gap:6px;color:#bfe6ce;font-size:12.5px;
+    background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);padding:6px 12px;
+    border-radius:8px;margin-bottom:16px}
+  nav.side .home:hover{background:rgba(255,255,255,.14);text-decoration:none}
+  .navlist{counter-reset:nd -1}
+  .navdoc{margin:2px 0}
+  .navtop{display:flex;align-items:center;gap:10px;color:#eafaf0;padding:8px 10px;border-radius:9px;
+    font-size:14.5px;font-weight:600}
+  .navtop::before{counter-increment:nd;content:counter(nd);flex:none;width:22px;height:22px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#1a2230;
+    background:#fff;box-shadow:inset 0 -2px 4px rgba(0,0,0,.25)}
+  .navdoc:nth-child(2) .navtop::before{background:#f5c518}
+  .navdoc:nth-child(3) .navtop::before{background:#1f6fd0;color:#fff}
+  .navdoc:nth-child(4) .navtop::before{background:#d6332e;color:#fff}
+  .navdoc:nth-child(5) .navtop::before{background:#6b3fa0;color:#fff}
+  .navdoc:nth-child(6) .navtop::before{background:#e8801a;color:#fff}
+  .navtop:hover{background:rgba(255,255,255,.08);text-decoration:none}
+  .navdoc.active>.navtop{background:rgba(255,255,255,.16);color:#fff}
+  .subs{display:none;margin:2px 0 8px 32px;border-left:1px solid rgba(255,255,255,.15);padding-left:8px}
+  .navdoc.active .subs{display:block}
+  .subs a{display:block;color:#bfe6ce;font-size:13px;padding:4px 9px;border-radius:7px;margin:1px 0}
+  .subs a:hover{background:rgba(255,255,255,.07);text-decoration:none}
+  .subs a.on{background:var(--accent);color:#3a2c00;font-weight:700}
+
+  main{padding:0 0 90px;min-width:0}
+
+  header.hero{background:linear-gradient(135deg,var(--felt) 0%,var(--felt-light) 100%);
+    color:#fff;padding:56px 52px 48px;position:relative;overflow:hidden}
+  header.hero::after{content:"";position:absolute;right:-70px;top:-70px;width:300px;height:300px;
+    background:radial-gradient(circle,rgba(255,255,255,.16),transparent 70%);border-radius:50%}
+  header.hero::before{content:"";position:absolute;left:-40px;bottom:-90px;width:240px;height:240px;
+    background:radial-gradient(circle,rgba(0,0,0,.12),transparent 70%);border-radius:50%}
+  header.hero .eyebrow{font-size:13px;letter-spacing:3px;color:#bdebcf;text-transform:uppercase;font-weight:700}
+  header.hero h1{margin:8px 0 12px;font-size:34px;font-weight:800;letter-spacing:.5px;position:relative;z-index:1}
+  header.hero p{margin:0;max-width:820px;color:#e8f7ee;font-size:16px;position:relative;z-index:1}
+  .pills{margin-top:24px;display:flex;flex-wrap:wrap;gap:9px;position:relative;z-index:1}
+  .pill{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);
+    padding:6px 14px;border-radius:999px;font-size:13px;backdrop-filter:blur(4px)}
+
+  section.doc{padding:30px 52px;border-bottom:8px solid #eef1f4}
+  .rendered{max-width:880px}
+  .rendered h1{font-size:27px;color:var(--felt-dark);margin:8px 0 4px;padding-bottom:12px;
+    border-bottom:3px solid var(--felt);font-weight:800;line-height:1.35}
+  .rendered h2{font-size:21px;margin:36px 0 12px;padding-left:13px;border-left:5px solid var(--felt-light);
+    color:var(--ink);font-weight:700;line-height:1.4}
+  .rendered h3{font-size:16.5px;margin:24px 0 8px;color:var(--felt-dark);font-weight:700}
+  .rendered h4{font-size:15px;margin:16px 0 6px;color:var(--ink)}
+  .rendered p{margin:11px 0}
+  .rendered strong{color:var(--felt-dark);font-weight:700}
+  .rendered ul,.rendered ol{margin:11px 0;padding-left:24px}
+  .rendered li{margin:5px 0}
+  .rendered hr{border:none;border-top:1px dashed var(--line);margin:26px 0}
+  .rendered code{background:#eef3f0;color:#0a5a32;padding:1.5px 6px;border-radius:5px;
+    font-family:"SF Mono",Consolas,Menlo,monospace;font-size:.88em}
+
+  .rendered blockquote{margin:18px 0;background:linear-gradient(180deg,#f1f9f4,#eaf6ef);
+    border:1px solid #cfe9da;border-left:5px solid var(--felt);border-radius:12px;
+    padding:14px 20px;color:#143d29;box-shadow:var(--shadow)}
+  .rendered blockquote p{margin:6px 0}
+  .rendered blockquote strong{color:var(--felt)}
+
+  .tbl{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);background:#fff;margin:16px 0}
+  .rendered table{border-collapse:collapse;width:100%;font-size:13.6px;min-width:440px}
+  .rendered th,.rendered td{padding:10px 13px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  .rendered thead th{background:var(--felt-dark);color:#fff;font-weight:600;white-space:nowrap;position:sticky;top:0}
+  .rendered tbody tr:nth-child(even){background:#fafcfb}
+  .rendered tbody tr:hover{background:#f0f7f3}
+  .rendered td:first-child,.rendered th:first-child{white-space:nowrap}
+  .rendered table :is(td,th):nth-child(n+2){text-align:left}
+
+  .rendered pre{background:#0d1b14;color:#cfe9d8;padding:20px 22px;border-radius:var(--radius);
+    overflow-x:auto;box-shadow:var(--shadow);margin:18px 0}
+  .rendered pre code{background:none;color:#d3ecdd;padding:0;font-size:12.8px;line-height:1.55;
+    font-family:"SF Mono",Consolas,Menlo,monospace;white-space:pre}
+
+  .backtop{position:fixed;right:22px;bottom:22px;width:44px;height:44px;border-radius:50%;
+    background:var(--felt);color:#fff;display:none;align-items:center;justify-content:center;
+    box-shadow:var(--shadow);cursor:pointer;font-size:18px;z-index:40;border:none}
+  .backtop.show{display:flex}
+
+  @media(max-width:980px){
+    .wrap{grid-template-columns:1fr}
+    nav.side{position:static;height:auto;overflow:visible}
+    .navlist{display:flex;flex-wrap:wrap;gap:4px}
+    .navdoc{flex:1 1 auto}
+    .subs{display:none!important}
+    header.hero{padding:40px 22px}
+    section.doc{padding:26px 22px}
+  }
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div class="wrap">
+  <nav class="side">
+    <div class="brand">APEX<span>·</span>賽制</div>
+    <div class="sub">撞球賽制與賽務研究</div>
+    <a class="home" href="../">← 返回研究中心</a>
+    <div class="navlist" id="navlist"></div>
+  </nav>
+  <main>
+    <header class="hero">
+      <div class="eyebrow">APEX TOURNAMENT RESEARCH</div>
+      <h1>撞球賽制與賽務研究</h1>
+      <p>盤點全球撞球「辦賽」的知識——規則、賽程、秩序、裁判、賽務流程，依<strong>美式 / 英式 / 中式</strong>三大體系分類整理，作為 APEX 盃在賽程賽制上進化的設計基礎。核心論點：APEX 不複製單一體系，而做三者重組——美式競技骨架＋英式執法控場＋中式群眾商業＋自有評分引擎。</p>
+      <div class="pills">
+        <span class="pill">美式 WPA · race-to · 雙敗淘汰</span>
+        <span class="pill">英式斯諾克 · 裁判權威 · Shot Clock</span>
+        <span class="pill">中式八球 Heyball · 玉山模式</span>
+        <span class="pill">跨賽制電路</span>
+        <span class="pill">裁判分級與判例庫</span>
+        <span class="pill">6 篇研究</span>
+      </div>
+    </header>
+<section class="doc" data-short="總覽"><script type="text/markdown" id="md-0">
+# APEX 撞球賽制與賽務研究
+
+> 目標：徹底盤點全球撞球「**辦賽**」的知識——規則、賽程、秩序（賽程編排與種子）、裁判、賽務流程——
+> 依**美式 / 英式 / 中式**三大體系分類整理，作為 APEX 盃在**賽程賽制上進化**的設計基礎。
+>
+> 本研究線與 `/research/`（評分系統 DUPR）、`/saas-research/`（店務 SaaS）為三條獨立主題。
+> 三者交會點：**評分系統**產生種子與讓分 → **賽制**消費這些資料 → **SaaS** 是執行賽務的軟體載體。
+
+---
+
+## 為什麼要分「美式 / 英式 / 中式」？
+
+撞球不是單一運動，而是**三套器材傳統 × 三套規則文化**的集合。辦一場賽事，
+器材、檯桌、計分單位、裁判動作、節目化方式都因體系而根本不同：
+
+| 體系 | 代表賽制 | 檯桌 | 計分單位 | 勝負邏輯 | 治理組織 |
+|------|---------|------|---------|---------|---------|
+| **美式 American** | 9 號球、8 號球、10 號球、14-1、One Pocket | 9ft 落袋大袋口 | 局（rack/game） | 先贏 N 局（race-to） | WPA / BCA / Matchroom |
+| **英式 English** | 斯諾克、英式撞球、英式八球(blackball) | 12ft 斯諾克檯小圓袋 | 分（point）/ 局(frame) | 高分勝該局 → 先贏 N 局 | WPBSA / IBSF / WEPF |
+| **中式 Chinese** | 中式八球（Heyball 黑八） | 9ft 斯諾克型檯（小圓袋、絨布） | 局（rack） | 先贏 N 局（race-to） | CBSA / 喬氏 Joy / WPA(2025 納入) |
+
+> **核心觀察**：中式八球是**美式規則 + 英式檯桌**的混血——用美式 8 號球規則，打在類斯諾克的緊袋口檯上。
+> 這正說明三大體系並非互斥，而是**規則層**與**器材層**可重組。APEX 的賽制創新空間就在這個重組面上。
+
+---
+
+## 研究文件索引
+
+| 編號 | 文件 | 內容 |
+|------|------|------|
+| 00 | `README.md` | 本檔。三體系框架、導讀、APEX 切入點 |
+| 01 | `01-美式賽制與賽務.md` | WPA 系統：各球種規則、race-to、開球規範、裁判、淘汰賽結構、旗艦賽事 |
+| 02 | `02-英式賽制與賽務.md` | 斯諾克 frame/排名/裁判權威、英式撞球計分、blackball；計時制與節目化 |
+| 03 | `03-中式賽制與賽務.md` | 中式八球 Heyball：器材、CBSA/喬氏、玉山世錦賽、巨額獎金、WPA 2025 納入；台灣賽事生態 |
+| 04 | `04-賽制進化建議.md` | **結論**：APEX 跨體系賽制設計、賽程編排、種子讓分、裁判分級、節目化與防作弊 |
+| 05 | `05-裁判與規則執行.md` | **裁判規則書原文對照**：三體系裁判 shall/shall not、官員分級、判決終局性、申訴、shot clock、罰則目錄 |
+| — | `sources/` | 官方規則書快取（PDF + MarkItDown 轉出的 .md）：WPA 競賽規則/賽事規範、WPBSA 斯諾克、WPA Heyball |
+
+---
+
+## 辦一場撞球賽的七個賽務模組（共通骨架）
+
+無論哪個體系，一場賽事都由這七塊組成。各篇會逐一對照三體系的做法：
+
+1. **報名與分組（Entry & Seeding）**——open 開放報名 vs 資格賽 vs 邀請；種子如何排。
+2. **賽程結構（Format）**——單敗、雙敗、循環、瑞士制、分組賽+淘汰。
+3. **單場賽制（Match Format）**——race-to 幾局、best-of 幾局、開球權（交替/勝方/敗方）。
+4. **秩序編排（Draw & Schedule）**——抽籤、避免同組、檯次分配、場次時間表（秩序冊）。
+5. **裁判與規則執行（Officiating）**——主審/副審層級、犯規判罰、爭議仲裁。
+6. **計分與記錄（Scoring & Records）**——計分板、即時比分、數據統計。
+7. **節目化與轉播（Presentation）**——TV 檯、燈光、解說、觀眾體驗、贊助露出。
+
+---
+
+## APEX 的切入點（完整見 04）
+
+- **跨賽制電路（multi-discipline circuit）**：一站賽會同時辦多個球種，選手跨賽制累積積分——
+  這需要一套能**橫跨美式/英式/中式**的賽程模板與積分換算（接 `/research/` 的統一評分）。
+- **用評分驅動賽程**：以 Fargo 式評分產生**種子**與**讓分 race-to**，讓業餘與高手同場仍精彩。
+- **節目化賽制**：吸收斯諾克 Shoot Out 計時制、中式八球的巨型舞台與燈光，設計適合直播與短影音的賽制。
+- **分級裁判制度**：建立 APEX 自有的裁判認證與判例庫，解決多賽制規則不一的執行難題。
+
+> 後續：本研究將與評分研究合流，產出 APEX 賽事規程（rulebook）與賽務 SOP，並可網頁化為公開說明。
+</script><div class="rendered" id="doc-0"></div></section>
+<section class="doc" data-short="美式賽制"><script type="text/markdown" id="md-1">
+# 01 · 美式撞球賽制與賽務
+
+> 美式 = **落袋撞球（pocket billiards / pool）** 主流體系，治理核心是 **WPA（World Pool-Billiard Association）**。
+> 特徵：9ft 大袋口檯、以「**局（rack）**」為單位、單場以「**先贏 N 局（race-to N）**」定勝負、開球極關鍵。
+> 這是 APEX 主力賽制（9 號球最多選手、最多數據），本篇是賽務設計的主參照。
+
+---
+
+## 1. 治理架構：誰訂規則、誰辦賽
+
+撞球的全球治理是**金字塔 + 多頭**結構，務必分清楚：
+
+```
+WCBS（World Confederation of Billiards Sports，撞球運動世界總會，對接 IOC/世界運動會）
+ ├─ WPA  ── 落袋撞球（美式 pool）          ← 本篇
+ ├─ UMB  ── 開倫（carom，三顆星等）
+ └─ IBSF / WPBSA ── 斯諾克與英式撞球       ← 見 02
+```
+
+WPA 之下：
+- **區域聯盟**：BCA（美洲）、EPBF（歐洲，辦 Euro Tour）、ACBS（亞洲，辦 Asian Tour）、AAPA、CPB、OPBA。
+- **商業推廣方**：**Matchroom Sport**（代 WPA 營運男子世界 9 號球錦標賽，並擁有 World Nineball Tour、Mosconi Cup、World Pool Masters、World Cup of Pool 等旗艦 IP）。
+- **業餘聯賽體系**：APA、VNEA、BCAPL——各自有**獨立規則**與**讓分制**（見 6 節）。
+
+> **辦賽啟示**：WPA 出「**競賽規則（Rules of Play）**」+「**規程（Regulations）**」+「**運動規範（Sports Regulations）**」+「**認證規範（Sanctioning）**」四套文件分層。
+> APEX 應比照——把「**怎麼打（rules）**」與「**怎麼辦（regulations）**」分開成冊，前者穩定、後者每站可微調。
+
+WPA 官方規則文件（2026 版）涵蓋：Rules of Play、Regulations、Sports Regulations、Equipment Spec、Sanctioning、**Pyramid Rules（俄式）**、**Heyball Rules（中式，2025 新增）**——
+顯示 WPA 已把中式八球納入官方治理（見 03）。
+
+---
+
+## 2. 各球種規則與「計分單位」對照
+
+辦賽第一件事是確定**勝負的數學單位**，因為它決定一場要打多久、怎麼排程。
+
+| 球種 | 球數/排列 | 勝負單位 | 一局如何結束 | 開球後特殊規則 |
+|------|----------|---------|-------------|--------------|
+| **9 號球** | 1–9，菱形排 | 局（race-to） | 合法落 9 號球 | push out（開球後可推桿）|
+| **10 號球** | 1–10，三角排 | 局（race-to） | 指袋落 10 號 | 須報袋；9/10 不可開球致勝 |
+| **8 號球** | 15 顆，三角排 | 局（race-to） | 清完己組+指袋落 8 | 開球進球決定花色 |
+| **14-1（直線球）** | 15 顆，留 1 重排 | **分（到 100+）** | 累積分數達標 | 連桿(run)可跨局；犯規 −1 |
+| **One Pocket** | 15 顆 | **球數（先到 8）** | 只能進自己那 1 個底袋 | 高度策略/防守 |
+| **Bank Pool** | 全反彈進袋 | 球數 | 指定數量 | 每球須庫邊反彈 |
+
+**關鍵差異**：9/10/8 號球是「**先贏 N 局**」——時間可預期，適合排程與轉播；
+14-1 是「**累積分數**」——時間不固定，適合分時段；One Pocket 慢、策略深，適合小眾精緻賽。
+
+### 9 號球規則精要（APEX 主力，務必標準化）
+- **目標**：永遠先碰檯面**號碼最小**的球；任何球進袋即繼續，合法進 9 號即勝該局。
+- **開球**：須先碰 1 號球；現代規則多要求**至少一顆球過中線**或進袋方為有效開球。
+- **金球（golden break）**：開球直接進 9 號可瞬間勝局——但歐巡與 Mosconi Cup 用 **break box（開球框）** 與 **9 號置於腳點** 來抑制「過強開球/軟開球」。WPA 2025 已採納 9 號置腳點。
+- **犯規**：未碰最小號球、母球落袋、無球碰庫——對手獲 **ball in hand（自由球，全檯任放）**。連續三次犯規判負該局。
+- **跳球合法**（與斯諾克不同），選手常備專用 jump cue。
+
+> **賽務要點**：9 號球「ball in hand」與「跳球」讓比賽快、攻擊性強、利於轉播——這是它取代 14-1 成為職業主流的根本原因。APEX 設計轉播賽制應優先考慮 9/10 號球。
+
+---
+
+## 3. 單場賽制（Match Format）：race-to 的藝術
+
+「**race to N**」= 先贏 N 局者勝。這是美式賽務最核心的旋鈕，直接控制**比賽時長、爆冷機率、轉播節奏**。
+
+| race-to | 典型場景 | 單場約略時長 | 爆冷度 |
+|---------|---------|------------|-------|
+| race to 5–7 | 資格賽、業餘 | 30–50 分 | 高（短，易爆冷）|
+| race to 9–11 | 職業正賽常規 | 60–90 分 | 中 |
+| race to 13 | 半決賽/決賽 | 90–150 分 | 低（長，實力顯現）|
+| race to 17–25+ | 經典長盤決賽（如 US Open 早年）| 數小時 | 最低 |
+
+**開球權的三種模式**（影響公平性與節奏）：
+1. **交替開球（alternate break）**——最公平，現代職業主流。WPA 男子世錦賽用此。
+2. **勝方續開（winner break）**——強者易連續「break and run」屠檯，刺激但易一面倒。
+3. **敗方開球（loser break）**——平衡機制，讓落後方有反撲機會。
+
+**先後手決定**：擲幣或 **lag（互推母球比近頂庫）**，贏的選開球或讓對手開。
+
+> **APEX 設計建議**：用 race-to 長度做「**賽段升階**」——資格 race-7、正賽 race-9、決賽 race-11——
+> 既控制總時長，又讓關鍵場次更具份量。開球一律 alternate break 確保公平與數據純淨（利於評分系統）。
+
+---
+
+## 4. 賽程結構（Tournament Format）：把 N 名選手排成一棵樹
+
+這是「秩序」的核心。五種主結構，各有取捨：
+
+### 4.1 單敗淘汰（Single Elimination）
+- 輸一場即出局。N 名需 ⌈log₂N⌉ 輪。
+- ✅ 場次最少、時長最短、易排程。 ❌ 爆冷無容錯、半數選手只打一場。
+- 適合：大型 open（前期快速篩選）、時間/檯數受限的賽事。
+
+### 4.2 雙敗淘汰（Double Elimination）⭐ 美式最愛
+- 分**勝部（winners bracket）** 與 **敗部（losers bracket）**；輸兩場才出局。
+- ✅ 容錯一次、公平性高、選手保證打 2 場以上。 ❌ 場次約為單敗兩倍、決賽可能需「**reset**（敗部冠軍須連贏兩盤）」。
+- 適合：US Open 9-Ball 等大型公開賽前段——**這是美式公開賽的標誌性結構**。
+
+### 4.3 分組循環 + 淘汰（Group Stage → Knockout）
+- 先分小組單循環（round robin），各組前 N 名晉級單/雙敗淘汰。
+- ✅ 保證每人多場、適合電視排程、首日就有故事線。 ❌ 可能出現「算計賽果」、需處理同分排名（głowa-to-head/局差）。
+- 適合：WPA 男子世錦賽近年採此（小組賽 → 單敗）。
+
+### 4.4 瑞士制（Swiss System）
+- 不淘汰，每輪依**戰績配對**（同分打同分），打固定輪數後依積分排名。
+- ✅ 無人提早出局、場次可控、實力排序準。 ❌ 需配對軟體、後段可能有「無關緊要」場次。
+- 適合：選手多、檯少、希望人人多打的業餘大賽。
+
+### 4.5 階梯/挑戰制（Ladder / Challenge）
+- 英式撞球歷史上的「挑戰賽」傳統（見 02），美式較少用於正式錦標。
+
+> **APEX 設計建議**：採「**分組循環 → 雙敗淘汰**」混合——
+> 首日小組賽確保每位報名者至少打 3 場（體驗 + 數據量），次日起雙敗淘汰兼顧容錯與張力。
+> 這也最大化每位選手的對局數，**餵養評分系統**。
+
+---
+
+## 5. 秩序編排與裁判
+
+### 5.1 抽籤與種子（Draw & Seeding）
+- **種子**：依世界排名/在地排名/評分，把強者分散到籤表不同象限，避免首輪即強碰強。
+- **避籤**：同國/同隊/同店選手盡量避免過早相遇（國際賽常見）。
+- **檯次分配**：TV 檯留給種子與焦點戰；外場檯快速消化資格賽。
+
+### 5.2 裁判制度（Officiating）
+- 美式職業賽：每檯一名**主裁（referee）**，負責擺球（rack）、判犯規、報袋確認、清潔母球、ball-in-hand 裁定。
+- 重要戰用 **TD（Tournament Director，賽事總監）** 處理規則爭議與申訴。
+- 相對斯諾克，美式裁判**介入較少**（選手可自行擺球、自報安全球），但職業大賽趨向標準化裁判擺球（template rack 模板開球）。
+
+### 5.3 計分
+- 計分以**局數**為主，計分板（或電子比分）顯示雙方局數與 race-to 目標。
+- 數據統計：break-and-run 率、開球進球率、安全成功率——這些正是**評分系統的原料**。
+
+---
+
+## 6. 業餘讓分系統：APA Equalizer（APEX 可借鏡的 UX）
+
+職業賽用「絕對實力對打」，但業餘聯賽用**讓分**讓不同程度玩家同樂。APA 的 **Equalizer** 最具代表：
+
+- 每位選手有 **Skill Level（SL）**：8 號球 SL2–7、9 號球 SL1–9。
+- 對局依雙方 SL 查表決定各自的 race-to（讓分）。例：8 號球 SL2 對 SL6 → 「2/6」（SL2 先贏 2 局、SL6 先贏 6 局）。
+- 9 號球改**計球分**：每局 1–8 號各 1 分、9 號 2 分（每局上限 10 分），各 SL 累積到不同目標分。
+
+| | SL2 | SL3 | SL4 | SL5 | SL6 | SL7 |
+|--|-----|-----|-----|-----|-----|-----|
+| **SL2** | 2/2 | 2/3 | 2/4 | 2/5 | 2/6 | 2/7 |
+| **SL5** | 5/2 | 4/2 | 4/3 | 4/4 | 4/5 | 3/5 |
+| **SL7** | 7/2 | 6/2 | 5/2 | 5/3 | 5/4 | 5/5 |
+
+- **限制**：SL 是黑盒（防操縱卻引發 sandbagging 養豬問題）；只覆蓋 8/9 號球；靜態 7 級非連續評分。
+
+> **APEX 啟示**：APA 讓分表是「**FargoRate 連續評分 → 使用者友善 race-to**」的簡化版。
+> APEX 可用自有評分**動態生成讓分 race-to**，比 APA 精確、且因評分透明可大幅降低養豬作弊。
+> （此處與 `/research/05-撞球原生制度.md` 的 FargoRate race-to 表呼應。）
+
+---
+
+## 7. 美式旗艦賽事（賽制範本庫）
+
+| 賽事 | 球種 | 結構 | 特色（APEX 可借鏡）|
+|------|------|------|-------------------|
+| **WPA World 9-Ball Championship** | 9 球 | 小組賽→單敗 | 全球最高權威；Matchroom 營運、節目化成熟 |
+| **US Open 9-Ball** | 9 球 | 雙敗淘汰 | 大型 open 的雙敗標竿；任何人可報名 |
+| **Mosconi Cup** | 9 球 | 美 vs 歐團體對抗 | **團體賽 + 國族敘事**，娛樂化頂峰、break box |
+| **World Cup of Pool** | 9 球雙打 | 雙人交替擊球 | 雙打賽制範本 |
+| **World Pool Masters** | 9 球 | 邀請制單敗 | 精英邀請、短而密集、利轉播 |
+| **World 10-Ball** | 10 球 | 淘汰 | 報袋制更嚴謹、抑制軟開球，被視為更「純」的職業球種 |
+
+> **節目化觀察**：Mosconi Cup 用「**團體 + 國族對抗 + 主場氣氛 + 燈光音效**」把 9 號球變成黃金時段娛樂。
+> APEX 若要破圈，團體對抗賽（店 vs 店、城市 vs 城市）是高潛力格式。
+
+---
+
+## 8. 本篇對 APEX 的小結
+
+1. **以 9/10 號球為轉播主力**：race-to 可控時長、ball-in-hand 與跳球攻擊性強、數據純淨。
+2. **賽程採「分組循環 → 雙敗淘汰」**：兼顧體驗、容錯、張力，並最大化對局數餵養評分。
+3. **race-to 階梯升階**：資格 7 / 正賽 9 / 決賽 11，控時又造勢。
+4. **規則/規程分冊**：穩定的 rules + 每站可調的 regulations。
+5. **讓分 UX 借鏡 APA、引擎用自有評分**：動態 race-to，業餘高手同場且防養豬。
+6. **團體對抗賽**（Mosconi 式）作為破圈節目化格式。
+</script><div class="rendered" id="doc-1"></div></section>
+<section class="doc" data-short="英式賽制"><script type="text/markdown" id="md-2">
+# 02 · 英式撞球賽制與賽務
+
+> 英式 = 源自英國/大英國協的體系，核心是 **斯諾克（Snooker）**，旁支有 **英式撞球（English Billiards）** 與 **英式八球（blackball / 英式 8-ball pool）**。
+> 特徵：**12ft 大檯、小圓袋、有絨毛方向性（nap）的檯布**；以「**分（point）→ 局（frame）→ 盤（match）**」三層計分；
+> **裁判權威極高**、**計時/節目化最成熟**。這是 APEX 在「**比賽呈現與裁判制度**」上最該學的體系。
+
+---
+
+## 1. 治理架構：職業與業餘雙軌
+
+```
+WPBSA（World Professional Billiards & Snooker Association）── 職業端
+ └─ WST（World Snooker Tour）── 由 Barry Hearn / Matchroom 體系商業營運
+IBSF（International Billiards & Snooker Federation）── 業餘端（含各國協會）
+World Women's Snooker ── 女子巡迴
+WEPF / WPA ── 英式八球（blackball）雙頭並存
+```
+
+- **WPBSA** 訂《斯諾克與英式撞球official規則》（2024-25 版），是規則權威。
+- **WST** 負責職業巡迴的賽事營運、排名、轉播——**商業與競技分離**的典範。
+- 斯諾克是少數**男女同巡迴開放（open tour）** + 另設女子巡迴的運動。
+
+> **辦賽啟示**：英式體系把「**規則制定（WPBSA）**」與「**賽事營運（WST）**」徹底分工，
+> 且**業餘（IBSF）與職業（WPBSA）有清楚升降通道**。APEX 若要長期經營，應及早分離「規則權威」與「商業營運」兩個角色。
+
+---
+
+## 2. 斯諾克：以「分」累積的計分文明
+
+### 2.1 器材與檯桌（決定一切的根本）
+- **檯桌**：全尺寸 12ft（檯面約 356.9 × 177.8 cm），檯高約 86.4 cm；**小圓袋口**比美式緊得多。
+- **球**：22 顆——白母球 + **15 紅球（各 1 分）** + 6 彩球：**黃 2、綠 3、棕 4、藍 5、粉 6、黑 7 分**。球徑 52.5mm。
+- **檯布有方向性絨毛（nap）**：同樣力道,推向不同方向球速與走位不同——這是英式檯的獨特技術維度。
+- **需要大空間**：建議房間 ≥ 22ft × 16ft，限制了普及場地。
+
+### 2.2 計分三層級（APEX 排程必懂）
+```
+分(point) → 一桿連續得分叫 break（如 147 滿分桿）
+   ↓ 累積
+局(frame) → 一局打完所有球，分高者勝該局
+   ↓ 先贏 N 局
+盤(match) → best-of-N frames（如 best of 19 = 先贏 10 局）
+```
+- **一局流程**：先進 1 顆紅球(+1)，再指定 1 顆彩球(+其分值，彩球進後重置回點)，紅彩交替；紅球清空後，依**黃→綠→棕→藍→粉→黑**順序清彩球。
+- **斯諾克(snooker)戰術**：做球讓對手無法直接擊到目標球，逼迫犯規送分——這是「防守得分」的精髓。
+- **犯規**：送對手 4–7 分；母球進袋、未碰目標球、碰錯球皆罰。
+- **平局處理**：最後黑球**重置（re-spotted black）** 決勝負。
+
+### 2.3 盤制長度（match length）：英式的時長旋鈕
+| 盤制 | 場景 | 約略時長 |
+|------|------|---------|
+| best of 7（先 4）| 巡迴賽前段 | 1.5–2.5 小時 |
+| best of 11（先 6）| 排名賽中段 | 3–4 小時 |
+| best of 19（先 10）| 大賽決賽 | 跨日（分節 session）|
+| best of 35（先 18）| **世錦賽決賽** | **跨 2 天 4 節** |
+
+> **對比美式**：斯諾克單盤**遠長於**美式 race-to，且用「**分節（session）**」把長盤切成多個轉播時段。
+> 這對 APEX 的啟示是：**長盤適合製造史詩敘事，但必須用分節技術管理時長與轉播**。
+
+---
+
+## 3. 排名與升降：兩年滾動獎金制
+
+斯諾克世界排名是**最極端的「職業導向 + 商業綁定」制度**：
+- 排名 = 滾動 **2 年**所有排名賽**獎金**（直接用現金英鎊，非抽象積分）。世錦賽冠軍約 £500,000。
+- 2 年前的獎金自動消失 → 選手必須不斷出賽「**保衛排名**」。
+- **業餘完全不適用**——只服務職業 tour 的 ~128 人。
+- 升降：Q School（資格學校）讓業餘升職業；排名末段掉出 tour。
+
+> **APEX 啟示**：獎金制排名簡單透明，但**只獎勵贏家、對業餘與發展中選手不友善**，
+> 也**不具備技能評分能力**（無法回答「讓幾分公平」）。APEX 應走評分制（見 `/research/`），
+> 但可借鏡其「**滾動時間窗 + 必須出賽保衛**」的 recency 機制（防止吃老本）。
+
+---
+
+## 4. 裁判制度：英式的最強資產
+
+斯諾克裁判是**全運動界裁判權威性最高的範例之一**，APEX 應深度學習：
+- **一檯一主裁全程在場**：擺球、報分、清潔彩球、彩球重置、判犯規、宣布「snookered」與自由球（free ball）、要求選手行為。
+- **裁判動作儀式化**：手套、安靜手勢、口令（"foul and a miss"）——成為轉播的一部分，建立莊重感。
+- **miss 規則裁量**：裁判可判「miss」要求重擺，是高度專業判斷。
+- **名裁成名人**：Len Ganley、John Williams、Jan Verhaas（首位非英裔世錦決賽主裁）、Michaela Tabb（首位女性世錦決賽主裁）——裁判本身有品牌價值。
+- 國際化與性別平權：近年大量非英裔與女性裁判進入職業巡迴。
+
+> **APEX 啟示**：建立**分級裁判認證**（地方→區域→國際）、**判例庫**、**儀式化動作規範**，
+> 不只是執法，更是**賽事公信力與節目質感**的來源。多賽制環境下，裁判標準化尤其關鍵。
+
+---
+
+## 5. 節目化創新：英式體系的實驗場
+
+斯諾克為了電視，做了大量**賽制節目化實驗**——這是 APEX 最該抄的作業：
+
+| 創新賽制 | 機制 | 解決什麼問題 |
+|---------|------|------------|
+| **Pot Black（1969）** | 單局決勝、為彩色電視設計 | 用綠檯彩球展示彩色電視；一局制縮短時長 |
+| **Snooker Shoot Out** | **單局 + 全程計時（10 分鐘）+ 擊球倒數(shot clock 15/10 秒)+ 觀眾可出聲** | 把慢節奏斯諾克變成快節奏娛樂 |
+| **Power Snooker** | 限時、PowerPlay 加倍區、9 紅球 | 加入加分機制與緊張感 |
+| **Six-red Snooker** | 只用 6 紅球 | 縮短單局時間 |
+| **Snooker Plus** | 加 2 彩球（橘 8/紫 10）| 提高單桿上限（已淘汰）|
+
+**計時工具**：
+- **Shot clock（擊球鐘）**：限制每桿秒數，是控時與防拖延的利器。
+- **Session（分節）**：長盤切多節，每節獨立售票/轉播。
+
+> **APEX 啟示**：APEX 的「節目化賽制」可直接移植 **Shoot Out 的「單局+計時+觀眾互動」**框架到 9 號球或中式八球，
+> 設計出適合**短影音與直播**的快節奏格式。Shot clock 應列為 APEX 標準配備（控時 + 數據化）。
+
+---
+
+## 6. 英式撞球（English Billiards）：三球計分制
+
+英式撞球是**落袋 + 開倫的混血**，雖在台灣/亞洲少見，但其計分邏輯對「分數制賽制」有參考價值：
+- **3 顆球**：白、黃（兩顆母球，各屬一位選手）、紅（共用目標球）。檯桌同斯諾克。
+- **得分方式**：
+  - **Cannon（佳侖/碰球）**：母球連續碰到另兩球 = **2 分**。
+  - **Winning hazard（進球）**：撞紅球入袋 = 3 分；撞對手母球入袋 = 2 分。
+  - **Losing hazard（in-off）**：母球碰他球後自落袋 = 碰紅 3 分 / 碰白 2 分。
+  - 單桿最高可得 10 分（多重組合）。
+- **勝負**：先達約定分數，或計時賽結束時分高者勝。
+- 歷史上盛行**挑戰賽（challenge match）**：持有頭銜者被挑戰，押注由第三方保管。
+
+> **APEX 啟示**：英式撞球的「**計時賽 + 分數制**」是另一種時長管理思路（固定時間比分高低），
+> 適合**團體計時對抗**或**表演賽**。挑戰賽機制則是「擂台衛冕」敘事的古老原型。
+
+---
+
+## 7. 英式八球（Blackball / 英式 8-ball pool）
+
+英國酒吧文化演化出的 8 號球變體，與美式 8 號球是**不同的遊戲**：
+- **器材**：7ft 小檯、小圓袋；**紅/黃無號球** + 黑 8；球徑 2"（51mm）或 52mm。
+- **規則差異**：犯規給對手 **兩桿（two shots）**；黑球（非首球）置點；做斯諾克與凍結球處理不同。
+- **治理**：**WEPF** 與 **WPA** 雙頭並存，犯規罰則細節有別。
+- 流行於英國、愛爾蘭、澳洲。
+
+> **APEX 啟示**：blackball 的「**兩桿罰則**」是介於「ball-in-hand（美式重罰）」與「換手（輕罰）」之間的**中度罰則設計**，
+> 可作為 APEX 設計「對業餘更友善的犯規罰則」的參考。
+
+---
+
+## 8. 本篇對 APEX 的小結
+
+1. **規則權威與商業營運分離**（WPBSA vs WST）——APEX 應及早建立此分工。
+2. **裁判制度是最強資產**：分級認證 + 判例庫 + 儀式化動作 = 公信力 + 節目質感。
+3. **節目化賽制實驗室**：Shoot Out 的「單局 + shot clock + 觀眾互動」可直接移植到 APEX 快節奏格式。
+4. **Shot clock 列為標配**：控時、防拖延、產生數據。
+5. **長盤分節（session）技術**：用於決賽製造史詩敘事，同時管理時長與售票。
+6. **中度犯規罰則（blackball 兩桿制）**：業餘友善設計的中間選項。
+7. **計分文明（分→局→盤）**：與美式 race-to 並存，APEX 多賽制需同時支援兩種計分模型。
+</script><div class="rendered" id="doc-2"></div></section>
+<section class="doc" data-short="中式賽制"><script type="text/markdown" id="md-3">
+# 03 · 中式撞球賽制與賽務
+
+> 中式 = 以 **中式八球（Chinese eight-ball，國際品牌名 Heyball / 黑八）** 為核心的體系，是三大體系中**最年輕、商業化最猛、賽制最敢創新**的一支。
+> 特徵：**美式 8 號球規則 × 英式斯諾克型檯桌** 的混血；**巨型舞台、巨額獎金、海量報名**；治理上 **CBSA + 喬氏(Joy) 商業聯盟**主導，並於 **2025 年被 WPA 納入官方規則**。
+> 對 APEX 而言，中式體系是**在地市場最相關、節目化最值得抄、藍海最明顯**的一篇。
+
+---
+
+## 1. 中式八球是什麼：混血的勝利
+
+中式八球的誕生是一個**器材限制催生新運動**的經典案例：
+- 1980–90 年代，斯諾克是中國最流行的撞球，**斯諾克檯到處都是、美式 pool 檯稀少**。
+- 玩家想玩美式 8 號球，只能**在斯諾克型小檯上打**——於是演化出獨特的中式八球。
+
+**結果是一種混血**：
+| 維度 | 取自 | 細節 |
+|------|------|------|
+| **規則** | 美式 8 號球 | 分花色（單色 1-7 / 花色 9-15）、清完己組再指袋打 8 號 |
+| **檯桌** | 英式斯諾克 | 9ft、**圓弧緊袋口**、**有絨毛方向性的檯布**、平面庫邊 |
+| **球** | 美式 | 標準 2¼"（57mm）單色/花色球 |
+
+> **為什麼這個混血重要**：緊袋口 + napped 檯布讓中式八球**比美式 8 號球更難進球、更講走位與力道控制**，
+> 技術深度接近斯諾克，但保留 8 號球的攻防節奏與大眾易懂性。這讓它**同時具備觀賞門檻低與技術天花板高**的雙重優點——是極佳的轉播與大眾參與球種。
+
+中式八球已成為**中國第一大撞球運動**，主要賽事獎金是全球撞球界數一數二。
+
+---
+
+## 2. 治理架構：商業聯盟驅動（與美式/英式截然不同）
+
+中式體系的治理是**「協會 + 器材商」共生**模式：
+
+```
+CBSA（中國檯球協會 Chinese Billiards & Snooker Association）── 官方協會
+   ＋
+喬氏（Joy / 喬氏檯球，創辦人 高亮）── 器材商 + 賽事推手 + 規則塑造者
+星牌（Star）── 另一大器材商（斯諾克/中式檯供應，世錦賽器材常見）
+   ↓
+WPA（2025 起發布官方《Rules of Heyball》）── 國際化背書
+```
+
+- **喬氏(Joy)** 不只是賣檯子的——它**自辦世界級賽事、塑造規則、把中式八球國際化（改名 Heyball 行銷全球）**。這是「**器材商即聯盟**」的獨特模式。
+- **CBSA** 提供官方協會的正當性與國家隊體系。
+- **WPA 2025 納入 Heyball**：WPA 官網規則頁已列出官方《Rules of Heyball》PDF（2025），代表中式八球取得國際治理認證，正從「中國國內運動」走向「世界球種」。
+
+> **辦賽啟示**：中式體系證明，**商業推手 + 器材標準 + 國家協會**三位一體可以在 20 年內催生一個世界級球種。
+> APEX 作為賽會組織，可思考是否與器材商/場館連鎖**深度綁定**（呼應 `/saas-research/` 的店務 SaaS——場館即賽事節點）。
+
+---
+
+## 3. 旗艦賽事：玉山世界錦標賽（賽制範本）
+
+**中式台球世界錦標賽（World Chinese 8-Ball Masters）** 是中式體系的聖殿：
+- **地點**：中國江西省**玉山縣**——一個縣級市靠中式八球世錦賽成為「世界檯球之鄉」，是「**賽事帶動城市**」的範例。
+- **規模**：**海量開放報名**——資格賽階段選手數以千計（全球選手 + 大量中國本土選手），是撞球界報名規模最大的賽事之一。
+- **獎金**：總獎金與冠軍獎金長年位居撞球界前列（冠軍獎金達人民幣百萬級別）。*（精確數字逐年變動，待查證最新一屆）*
+- **男女分項**：設男子組與女子組，女子組獎金亦領先業界。
+- **國際化**：吸引 Joshua Filler（德）等世界級美式選手跨界參賽，並設**外卡**給國際明星。
+
+**衍生賽事**：
+- **喬氏 Heyball 大師賽 / 國際大師賽（Joy Heyball Masters）**——巡迴化、國際化的品牌賽事。
+- 各省市/俱樂部級別的下沉賽事，形成**金字塔賽事體系**。
+
+> **賽制範本**：玉山模式 = 「**超大開放資格賽（人人可報）→ 層層篩選 → 巨型決賽舞台**」。
+> 這是**最大化群眾參與 + 製造草根明星故事**的格式，與美式雙敗 open、英式邀請制都不同。
+> APEX 若要做「全民撞球」破圈賽事，玉山模式是首選參考。
+
+---
+
+## 4. 中式八球的單場賽制與規則執行
+
+### 4.1 規則精要（≈ WPA 8 號球，但有自己的節奏）
+- **花色分配**：開球後進球決定單色/花色；清完己組所有球後，指袋打 8 號球致勝。
+- **開球**：須讓足夠球數碰庫/過線方為有效；各賽事對開球有效性、是否須報袋有細部規定。
+- **犯規**：給對手 **ball in hand（自由球）**——同美式重罰邏輯。
+- **緊袋口效應**：因袋口比美式緊，**進球與走位難度高**，安全球與防守戰術比美式 8 號球吃重。
+
+### 4.2 race-to 賽制
+- 同美式以「**先贏 N 局（race-to）**」定勝負。
+- **資格賽**多用較短 race（如 race to 5）快速消化海量選手；**正賽與決賽**拉長（race to 7/9/11+）。
+- 開球權多採**交替開球（alternate break）** 或 **勝方續開**，依賽事規程而定。
+
+### 4.3 裁判與舞台
+- 大型中式賽事的**舞台製作（staging）是三大體系中最華麗的**：環形 LED、聚光燈、入場儀式、主持與解說——**把撞球做成演唱會等級的秀**。
+- 一檯一主裁，職責同美式（擺球、判犯規、ball-in-hand 裁定、報袋確認）。
+
+> **APEX 啟示**：中式賽事的**舞台節目化規格**是 APEX 最該對標的視覺標準——
+> 撞球可以不只是體育，而是**娛樂事件（entertainment event）**。這直接影響贊助、票房、社群傳播。
+
+---
+
+## 5. 中式體系的「賽制創新」清單（APEX 可直接借用）
+
+中式八球因為年輕、商業驅動，敢做傳統體系不敢做的事：
+1. **超大開放報名**：人人可報的資格賽，把賽事變成全民運動 funnel（也是巨大的選手數據池 → 餵養評分）。
+2. **巨額獎金做信號**：用頂級獎金吸引跨界明星 + 媒體關注，快速建立賽事地位。
+3. **賽事帶動城市/場館**：玉山模式把賽事 IP 與地方經濟綁定。
+4. **器材商即聯盟**：垂直整合器材標準、賽事、規則、轉播。
+5. **演唱會級舞台**：把節目化做到極致。
+6. **國際品牌重塑**：「中式八球 → Heyball」的命名行銷，降低國際推廣的文化門檻。
+
+---
+
+## 6. 中國斯諾克：另一條成熟賽道
+
+中式體系除了八球，**斯諾克在中國也極其成熟**，APEX 應了解其人才管線：
+- **丁俊暉（Ding Junhui）** 帶動整代中國斯諾克熱潮；**趙心童（Zhao Xintong）** 等新生代持續產出世界冠軍級選手。
+- **CBSA 世界斯諾克學院（北京）** 等青訓體系，系統化培養職業選手。
+- 中國是世界斯諾克巡迴賽（WST）的**最大海外市場**（賽事與商業價值），大量中國職業選手活躍於 tour。
+
+> **啟示**：中國同時擁有「**自主球種（中式八球）**」與「**輸出國際球種人才（斯諾克）**」兩條成熟賽道，
+> 顯示一個市場可以**並行經營在地原生賽制與國際標準賽制**——這正是 APEX 跨體系策略的現實證據。
+
+---
+
+## 7. 台灣撞球賽事生態（APEX 在地基礎）
+
+台灣是**美式撞球（尤其 9 號球）的世界級強權**，這是 APEX 最直接的在地土壤：
+- **治理**：**CTBA（中華民國撞球運動協會 / Chinese Taipei Billiard Association）** 為官方協會，辦全國賽、選拔國手、對接 WPA/亞洲撞總。
+- **世界級選手輩出**：
+  - **趙豐邦（Chao Fong-Pang，「冷面殺手」）**——台灣撞球國際化的開路先鋒。
+  - **張榮麟（Chang Jung-Lin）**、**吳珈慶**——世錦賽冠軍級。
+  - **柯秉逸（Ko Pin-Yi）**、**柯秉中（Ko Ping-Chung）** 兄弟——當代主力，世錦賽/世界賽常勝軍。
+- **賽事文化**：以 9 號球為主流，撞球館（撞球間）密度高、民間賽與職業選拔活躍；近年中式八球與 Heyball 也快速滲透。
+
+> **APEX 在地策略啟示**：台灣的強項在**美式 9 號球的選手深度**，弱項在**賽事品牌與節目化、商業化**。
+> APEX 的機會 = 用**中式體系的節目化/獎金/開放報名打法** + **評分系統的專業度**，
+> 把台灣既有的世界級選手池，包裝成有商業價值、可轉播、可跨體系的在地賽事 IP。
+> （台灣 PTT 撞球生態的詳細分析見 `/research/ptt-billiard-analysis-*.md`。）
+
+---
+
+## 8. 本篇對 APEX 的小結
+
+1. **中式八球 = 美式規則 × 英式檯桌**：證明規則層與器材層可重組，APEX 的賽制創新空間就在此。
+2. **玉山模式（超大開放報名 → 巨型決賽）**：全民參與 + 草根明星 + 海量數據池，APEX 破圈首選格式。
+3. **演唱會級舞台節目化**：APEX 視覺與娛樂規格的對標標竿。
+4. **商業聯盟治理（器材商 + 協會 + WPA 背書）**：垂直整合的可能性（接店務 SaaS）。
+5. **台灣的世界級選手池 + 中式的商業打法 = APEX 的核心配方**。
+6. **並行經營在地原生賽制與國際標準賽制**是可行且已被中國驗證的策略。
+</script><div class="rendered" id="doc-3"></div></section>
+<section class="doc" data-short="APEX 進化建議（結論）"><script type="text/markdown" id="md-4">
+# 04 · APEX 賽制進化建議（結論）
+
+> 本篇是整個賽務研究的收斂。把美式 / 英式 / 中式三體系的賽務知識，
+> 萃取成 **APEX 盃在「賽程賽制上進化」的具體設計方案**。
+> 核心命題：**APEX 不該複製任何單一體系，而要做三者的「最佳重組」——並用評分系統當引擎。**
+
+---
+
+## 0. 一句話策略
+
+> **以美式 9 號球的選手深度為底，套上中式八球的開放報名與舞台節目化，
+> 注入英式斯諾克的裁判權威與計時控場，再用 APEX 自有評分系統驅動種子、讓分與跨賽制積分。**
+
+三體系各有一塊「世界第一」的資產，APEX 的進化 = 把這三塊拼起來：
+
+| 體系 | 世界第一的資產 | APEX 取用 |
+|------|--------------|-----------|
+| 美式 | race-to 控時、雙敗淘汰、攻擊性球種、數據純淨 | **競技骨架** |
+| 英式 | 裁判權威、shot clock 控時、節目化實驗、規則/營運分離 | **執法與控場** |
+| 中式 | 開放報名 funnel、巨額獎金信號、演唱會舞台、商業聯盟 | **群眾與商業** |
+
+---
+
+## 1. 賽制進化的五個層次
+
+把「賽制進化」拆成五個可獨立迭代的層次，由內而外：
+
+```
+L1 單場賽制（race-to / 計時）        ← 控制單場時長與張力
+L2 賽程結構（雙敗 / 循環 / 瑞士）    ← 控制公平性與對局數
+L3 賽會結構（跨賽制電路 / 積分）     ← 控制賽季敘事與選手黏著
+L4 評分驅動（種子 / 讓分 / 分級）    ← 控制公平性與業餘參與
+L5 節目化（舞台 / 計時 / 轉播）      ← 控制商業價值與破圈
+```
+
+---
+
+## 2. L1 — 單場賽制：雙軌制（競技軌 + 節目軌）
+
+APEX 應同時維護**兩種**單場賽制，依場景切換：
+
+### 競技軌（Competitive）— 求公平與數據純淨
+- 球種：**9 號球 / 10 號球 / 中式八球**（race-to 制）。
+- **一律交替開球（alternate break）**——公平且讓評分數據純淨（消除開球權偏差）。
+- race-to 階梯升階：**資格 race-7 → 正賽 race-9 → 準決 race-11 → 決賽 race-13**。
+- 採 **template rack（模板擺球）** 確保開球一致性。
+
+### 節目軌（Show）— 求娛樂與轉播
+- 移植**斯諾克 Shoot Out 框架**：**單局或短 race + shot clock（如 20/15 秒）+ 觀眾可出聲**。
+- 適合短影音、直播、明星表演賽、團體對抗。
+- 計時 + 倒數鐘製造緊張感，且**每桿秒數本身就是數據**。
+
+> **進化點**：傳統撞球賽只有競技軌。APEX 用**節目軌破圈獲客、競技軌沉澱評分**，雙軌並行。
+
+---
+
+## 3. L2 — 賽程結構：分組循環 → 雙敗淘汰
+
+**預設模板**（單站賽事）：
+
+```
+Day 1：分組單循環（每組 4–5 人）
+        → 保證每人至少 3–4 場（體驗 + 數據量）
+        → 各組前 2 名晉級
+Day 2+：雙敗淘汰（winners / losers bracket）
+        → 容錯一次，保證晉級者再打多場
+        → 決賽含 bracket reset 規則
+```
+
+**為什麼這個組合**：
+- 循環賽**最大化對局數** → 餵養評分系統（每場都是數據）。
+- 雙敗**容錯 + 公平** → 減少爆冷的不公平感。
+- 海量報名時，前段可改用**瑞士制**（無人提早出局、配對軟體可控場次）。
+
+> **與中式對接**：若辦「玉山式」超大開放賽，資格階段用**單敗快篩**或**瑞士制**消化數千人，正賽再轉雙敗。
+
+---
+
+## 4. L3 — 賽會結構：跨賽制電路（APEX 的真正差異化）⭐
+
+這是 APEX 相對所有現有體系的**根本創新**，也是與 `/research/` 評分系統的交會點。
+
+### 4.1 跨賽制電路（Multi-Discipline Circuit）
+- 一個賽季由多站組成，每站可含**多個球種**（9 球、中式八球、10 球、甚至開倫表演）。
+- 選手在不同球種累積積分，匯入**統一評分（見 `/research/06`）**。
+- 賽季末按**綜合評分 + 電路積分**決出年度總冠軍。
+
+### 4.2 為什麼沒人做過
+- 美式只玩落袋、英式只玩斯諾克、中式只玩八球——**三體系互相隔離**。
+- FargoRate 只涵蓋 8/9/10 球，**不跨體系**（見 `/research/05`）。
+- APEX 的評分系統用**階層貝葉斯 + 部分匯聚**處理「跨賽制技能相關性」，正好支撐跨賽制電路。
+
+### 4.3 賽季敘事
+- 借鏡斯諾克「**滾動時間窗 + 必須出賽保衛**」（recency），防止吃老本。
+- 借鏡網球/F1 的「**賽季積分榜**」製造全年追看的敘事線。
+
+> **進化點**：把撞球從「一場場孤立的賽事」變成「**有賽季、有積分榜、有跨賽制總冠軍**的聯盟運動」。
+
+---
+
+## 5. L4 — 評分驅動賽務（公平性引擎）
+
+用 APEX 評分系統（`/research/`）驅動三件賽務決策：
+
+### 5.1 種子（Seeding）
+- 用評分自動排種子，分散強者到籤表不同象限。
+- 比「世界排名種子」更精準（評分含技能值，非僅名次積分）。
+
+### 5.2 讓分賽制（Handicap race-to）
+- 用評分差**反推公平 race-to**（如 `/research/05` 的 Fargo race-to 表）。
+- 業餘與高手同場：強者 race-9、弱者 race-5，仍精彩。
+- 比 APA Equalizer 精確、且因**評分透明可大幅降低 sandbagging（養豬）**。
+
+### 5.3 分級賽事（Tiered Events）
+- 依評分分級（如 600+ 公開組 / 400-600 進階組 / 400- 新手組），讓各級選手都有奪冠機會。
+- 解決「open 賽事高手通吃、業餘陪打」的體驗問題。
+
+> **進化點**：傳統賽事「報名即同場廝殺」。APEX 用評分做**種子 + 讓分 + 分級**三件事，
+> 讓**從新手到職業都有意義的比賽**——這是擴大參與基數（與商業基數）的關鍵。
+
+---
+
+## 6. L5 — 節目化與裁判（商業價值引擎）
+
+### 6.1 節目化（抄中式 + 英式）
+- **舞台**：對標中式八球的演唱會級舞台（LED、燈光、入場儀式）。
+- **控時**：英式 shot clock 列為標配（控時 + 防拖延 + 數據）。
+- **格式**：團體對抗賽（店 vs 店 / 城市 vs 城市，Mosconi 式國族敘事的在地版）。
+- **轉播**：競技軌做長尾深度內容、節目軌做短影音病毒傳播。
+
+### 6.2 裁判制度（抄英式）
+- **分級認證**：地方 → 區域 → 國際三級裁判。
+- **判例庫**：多賽制規則不一，需累積 APEX 自有判例與裁量標準。
+- **儀式化動作**：手勢、口令標準化——執法即節目質感。
+- **規則/規程分冊**：穩定的 rules（怎麼打）+ 每站可調的 regulations（怎麼辦）。
+
+### 6.3 治理分離（抄英式）
+- 及早分離「**規則權威**」與「**商業營運**」兩個角色（WPBSA vs WST 模式）。
+
+---
+
+## 7. 防作弊設計（跨體系痛點）
+
+撞球各體系都有作弊問題，APEX 應系統性防範：
+| 作弊類型 | 出處 | APEX 對策 |
+|---------|------|----------|
+| **Sandbagging（養豬壓分）** | APA 黑盒評分 | 評分**透明化** + 異常表現偵測 |
+| **故意輸球壓分** | FargoRate 坦承 | 每場必計 + recency 加權 + 統計離群偵測 |
+| **打假球/賭博** | 9 號球 hustling 文化 | 完整對局記錄 + 異常下注監控 |
+| **規則操縱** | 多賽制規則不一 | 統一規程 + 分級裁判 + 判例庫 |
+
+> 呼應 `/research/`：**評分透明 + 全量計分 + recency + 離群偵測** 是防作弊四支柱。
+
+---
+
+## 8. 落地路線圖（MVP → 完整）
+
+| 階段 | 賽制範圍 | 重點 |
+|------|---------|------|
+| **MVP** | 單一站、9 號球、分組循環→雙敗 | 跑通賽務 SOP + 開始累積評分數據 |
+| **V1** | 加中式八球、引入 shot clock 節目軌 | 雙軌賽制 + 節目化試水 |
+| **V2** | 評分驅動種子/讓分/分級 | 公平性引擎上線、業餘參與爆發 |
+| **V3** | 跨賽制電路 + 賽季積分榜 | 聯盟化、賽季敘事、年度總冠軍 |
+| **V4** | 跨體系（加開倫/斯諾克表演）+ 國際站 | 真正的跨體系撞球聯盟 |
+
+---
+
+## 9. 總結：APEX 賽制進化的本質
+
+傳統撞球的三大體系，各自把「一塊」做到世界第一，卻**彼此隔離、互不重組**。
+APEX 的進化機會，不在發明新規則，而在**做第一個系統性重組三體系的賽事組織**：
+
+1. **競技骨架**取自美式（race-to、雙敗、數據純淨）。
+2. **執法控場**取自英式（裁判權威、shot clock、規則/營運分離）。
+3. **群眾商業**取自中式（開放報名、巨額獎金、演唱會舞台）。
+4. **公平引擎**是 APEX 獨有（評分驅動種子/讓分/分級 + 跨賽制電路）。
+
+> **最終願景**：把撞球從「孤立賽事的集合」進化為「**有賽季、有積分、跨賽制、從新手到職業都有意義**的聯盟運動」——
+> 這是三大體系沒人做過、而 APEX 的評分系統剛好能支撐的藍海。
+
+---
+
+### 相關研究交叉索引
+- 評分數學與跨賽制統一：`/research/06-APEX跨賽制統一評分方案.md`
+- 撞球原生評分制度（FargoRate / APA / UMB）：`/research/05-撞球原生制度.md`
+- 台灣撞球生態：`/research/ptt-billiard-analysis-*.md`
+- 賽事執行的軟體載體（場館即賽事節點）：`/saas-research/`
+</script><div class="rendered" id="doc-4"></div></section>
+<section class="doc" data-short="裁判與規則執行"><script type="text/markdown" id="md-5">
+# 05 · 裁判制度與規則執行（三體系對照）
+
+> 本篇與 01–04 不同：內容**直接出自官方規則書原文**（PDF 經 MarkItDown 轉 Markdown，存於 `sources/`），非二手綜述。
+> 來源文件：
+> - **美式**：`wpa-rules-of-play.pdf`（WPA 競賽規則 2026）、`wpa-sports-regulations.pdf`（WPA 賽事規範，含 Tournament Officials）
+> - **英式**：`wpbsa-rulebook-2024-25.pdf`（WPBSA 斯諾克與英式撞球官方規則，Section 5 The Officials）
+> - **中式**：`wpa-heyball-rules.pdf`（WPA《Rules of Heyball》2025-08-16，Section 3 Code of Conduct for Referees）
+>
+> 目的：把三套**裁判規則書**抽出共通骨架與差異，作為 APEX 自有裁判制度與判例庫的藍本。
+
+---
+
+## 1. 裁判職責：三體系「shall / shall not」逐條對照
+
+三套規則書都用「裁判**應**做 / **不應**做」的二分法定義裁判角色——這是 APEX 裁判守則應直接沿用的結構。
+
+### 1.1 裁判「應」做（The referee SHALL）
+
+| 職責 | 美式 WPA | 英式 WPBSA | 中式 Heyball |
+|------|:---:|:---:|:---:|
+| 為「規則未涵蓋情形」依**公平競賽精神**裁決 | ✅ | ✅ | ✅ |
+| 維持比賽**正常進行與秩序** | ✅ | ✅ | ✅ |
+| 主動**介入/宣告犯規**（intervene / call FOUL）| ✅ | ✅ | ✅ |
+| 應要求**告知目標球號/位置/檯面是否開放** | ✅ | ✅ | ✅ |
+| 應合理要求**清潔球** | ✅ | ✅ | ✅（計時賽計入該選手時間）|
+| **擺球（racking）** 為裁判職責 | △（職業趨勢）| —（紅球選手擺）| ✅ 明文（選手每局可檢查一次）|
+| **宣告凍結球**（frozen ball）| ✅ | ✅（touching ball）| ✅ 明文（未宣告＝視為不貼）|
+| 協助拿取/歸位**輔助器材**（架桿）| ✅ | ✅ | ✅ |
+
+### 1.2 裁判「不應」做（The referee SHALL NOT）— 三體系高度一致
+
+- ❌ 回答與規則**無關**的問題。
+- ❌ **暗示**選手該桿可能犯規。
+- ❌ 提供**可能影響比賽結果**的建議或意見。
+- ❌（英式額外）回答**比分差距**相關問題。
+
+> **APEX 設計**：直接採用「shall / shall not」雙清單，並補上多賽制特有條款（如開倫無袋口、中式緊袋口的凍結球判定）。
+> 核心精神三體系完全相同——**裁判是中立仲裁者，不得成為任何一方的資訊優勢來源**。
+
+### 1.3 漏看爭議的補救（三體系都有，極重要）
+規則書都明訂：**若裁判未注意到爭議情形**，可諮詢——
+- 美式/中式：記分員、其他賽務人員、現場錄影設備、**最佳視角的觀眾**。
+- 英式：marker（記分員）、其他官員、最佳視角觀眾，或**調閱攝影/錄影**。
+
+> **APEX 設計**：明文允許 **video review（影像重播）** 作為裁判輔證——這在現代轉播賽事是標配，且可寫入判例庫。
+
+---
+
+## 2. 賽事官員層級：美式最完整（APEX 分級藍本）
+
+**美式 WPA** 的官員層級是三體系中最制度化的，直接可作 APEX 的裁判分級骨架：
+
+```
+WPA Sports Director（運動總監）── 監督整體運動面
+  └ Tournament Director（賽事總監 TD）── 規則爭議的最終裁決者
+      └ Head Referee（主任裁判 HR）── 每場世錦賽/排名賽須有 1 名（WPA 核可）
+          └ Referees（認證裁判）── 經 WPA 考試認證為「Intercontinental Referee」
+              └ Tournament Referees（賽會裁判）── 每 ≤2 檯配 1 名裁判 + 替補
+```
+
+**關鍵配置數字（直接可抄）**：
+- **每名裁判最多負責 2 檯**，須有替補。
+- 每場賽事**至少 1 名 HR**。
+- 裁判**津貼**：HR $150/日、一般裁判 $100/日（國際賽）。
+- 裁判需**通過考試**取得認證證書 → 這就是「裁判分級認證」的現成範本。
+
+**英式 WPBSA** 則細分**功能角色**（一檯多人）：
+- **Referee（主裁）**：仲裁、判罰、擺彩球。
+- **Marker（記分員）**：計分板記分、協助主裁、必要時兼記桿員。
+- **Stroke Recorder（記桿員）**：記錄每一桿/犯規/得分/單桿總分/警告。
+
+**中式 Heyball**：以 **Tournament Director / Head Referee** 為最高權限（規則細節、臨時改規、服裝、器材爭議的最終決定權），每檯 1 主裁。
+
+> **APEX 設計**：採**美式的縱向分級**（TD→HR→認證裁判→賽會裁判）+ **英式的橫向分工**（主裁/記分/記桿）。
+> 認證制度照搬 WPA「考試 → 發證」模式，建立 APEX 地方→區域→國際三級裁判證照。
+
+---
+
+## 3. 判決終局性原則：判斷 vs 規則適用（最重要的一條）
+
+三體系規則書都區分兩種「裁判錯誤」，且**處理方式完全不同**——這是裁判制度的法理核心：
+
+| 爭議類型 | 定義 | 能否申訴 |
+|---------|------|---------|
+| **判斷裁決（judgment call）** | 裁判對「事實」的判斷（球有沒有貼、有沒有先碰到目標球）| **不可申訴**，裁判判斷為終局 |
+| **規則適用（application of rules）** | 裁判是否**正確套用規則** | **可申訴**至指定上訴權責單位 |
+
+美式 WPA 競賽規則原文即明訂：選手可請裁判**重新考慮**其判斷，但「裁判對 judgment call 的決定為終局」；惟若選手認為裁判**未正確適用規則**，可要求指定上訴單位裁定，裁判暫停比賽待裁決。
+
+> **APEX 設計**：判例庫必須把每個爭議**標記為「判斷」或「規則適用」**——前者沉澱為裁判訓練教材，後者沉澱為規則修訂依據。這是多賽制環境下維持一致性的關鍵。
+
+---
+
+## 4. 申訴流程（Protest）三體系對照
+
+| 步驟 | 美式 WPA | 英式 WPBSA | 中式 Heyball |
+|------|---------|-----------|-------------|
+| 1. 第一線 | 向**裁判**即時提出 | 向**裁判**提出 | 向**裁判**溝通，裁判先裁 |
+| 2. 上訴 | 裁判聯繫 **HR** | 指定**上訴權責單位** | 升至 **chief referee → TD/HR** |
+| 3. 保證金 | 對 HR 裁決不服，繳 **US$100** 保證金 | —（依賽事章程）| **每次申訴繳費**（裁決有利則退費機制） |
+| 4. 終局 | **TD 最終裁決，不得再上訴** | 上訴單位裁定 | 一般賽事 **TD/HR 為終局** |
+| 5. 賽外申訴 | 賽間/賽後罰則可於 **14 天內**向董事會申覆；最終可至 **WPA 仲裁法庭** | — | — |
+
+> **APEX 設計**：採「**即時口頭 → HR → 保證金升級 → TD 終局**」四級，保證金機制可有效抑制濫訴；
+> 並區分「**場上即時申訴**」與「**賽外行政申覆（給冷靜期 + 書面）**」兩條軌道。
+
+---
+
+## 5. 時間控制：shot clock 規範（直接可抄的數字）
+
+三體系都已制度化計時，APEX 應將其列為標配並對齊這些數字：
+
+| 賽制 | 單場/單局時限 | 每桿 shot clock | 延長/暫停 |
+|------|--------------|----------------|----------|
+| **中式 Heyball**（計時賽）| 每場 **120 分鐘**\* | **每桿 45 秒** | 每 8 局後官方休息 5/10 分；可申請暫停 |
+| **英式 Snooker Shoot Out** | 單局 **10 分鐘** | 前 5 分 **15 秒** / 後 5 分 **10 秒** | 裁判決策可暫停賽鐘 |
+| **美式 WPA** | 依賽事章程 | 依賽事章程（常見 30–45 秒，可一次延長）| TD/HR 設定 |
+
+\* Heyball 規則註明賽鐘是否計入裁判擺球時間，由 TD/HR 決定；最後 5 秒裁判倒數「5,4,3,2,1」。
+
+> **APEX 設計**：節目軌（見 04）採 Shoot Out 式「**單局 + 15/10 秒遞減**」製造張力；
+> 競技軌採中式「**45 秒/桿 + 每桿可一次延長**」平衡品質與節奏。倒數口令標準化（儀式感 + 公平）。
+
+---
+
+## 6. 行為準則與罰則目錄（Disciplinary Catalogue）
+
+**美式 WPA** 規則書附有**罰則對照表**，APEX 可直接改寫為自有罰則目錄：
+
+| 違規 | 罰則 | 裁決者 |
+|------|------|--------|
+| 不運動員精神行為 | 罰款上限 $2,000 + 取消資格 | TD |
+| 服裝不合規 | 罰款上限 $100 + 取消資格 | TD |
+| 賽前 2 週內棄賽 | 罰款 $275 | SD |
+| 無故缺席（no show）| 罰款上限 $500 + 取消資格 | SD |
+| 未出席選手會議 | 首次 $250；再犯 $500 | — |
+| 故意干擾賽事 | 罰款上限 $500 + 取消資格 | TD |
+
+**中式 Heyball** 另有細緻的場上行為規範：未經裁判許可**離開比賽區**＝不運動員精神；拒絕打一局、辱罵對手/裁判＝判負該局/該場 + 上報 TD。
+**禁止賭博與受賄**：三體系都明文禁止選手就賽果下注（防作弊，呼應 04 第 7 節）。
+
+> **APEX 設計**：建立**罰則目錄**（違規 → 罰則 → 裁決者三欄），公開透明；
+> 把「**禁止下注賽果 + 異常監控**」寫入規則，與評分系統的防作弊偵測（`/research/`）形成制度＋技術雙重防線。
+
+---
+
+## 7. 服裝與器材規範（賽務細節）
+
+- **美式 WPA**：有 Dress Code（另列於 WPA Regulations）；選手須顯示所屬國名；廣告/logo 有限制；不確定可賽前問 SD。
+- **中式 Heyball**：明訂**黑西裝褲（禁牛仔褲）+ 黑皮鞋**；器材爭議由 TD/HR 終裁；不可中途換用新型器材（須賽前報備）。
+- **器材合規**：WPA 規範未用官方認證器材時的抗議權；APEX 多賽制需各賽制各一套器材規格（接 `/saas-research/` 場館器材標準）。
+
+---
+
+## 8. 本篇對 APEX 的小結（裁判制度設計清單）
+
+1. **裁判守則用「shall / shall not」雙清單**，核心精神＝中立仲裁、不洩露資訊優勢。
+2. **官員分級**＝美式縱向（TD→HR→認證裁判→賽會裁判，每≤2檯1裁）＋ 英式橫向（主裁/記分/記桿）。
+3. **裁判認證**照搬 WPA「考試→發證」，建立 APEX 地方/區域/國際三級證照。
+4. **判決終局性**：嚴格區分「判斷裁決（不可訴）」與「規則適用（可訴）」，並據此分流判例庫。
+5. **申訴四級 + 保證金**抑制濫訴；場上即時 vs 賽外書面雙軌。
+6. **shot clock 標配**：節目軌 15/10 秒、競技軌 45 秒；倒數口令標準化。
+7. **罰則目錄公開** + **禁止賽果下注**，與評分防作弊偵測形成雙重防線。
+8. **video review** 明文化為裁判輔證。
+
+---
+
+### 附：sources/ 規則書快取（可隨時重查原文）
+| 檔案 | 內容 | 關鍵章節 |
+|------|------|---------|
+| `wpa-rules-of-play.md` | WPA 競賽規則 2026（44 頁）| 各球種規則、judgment call 終局性 |
+| `wpa-sports-regulations.md` | WPA 賽事規範 | §5 Tournament Officials、§6 申訴與罰則目錄 |
+| `wpbsa-rulebook-2024-25.md` | WPBSA 斯諾克/英式撞球（2024-25）| §5 The Officials、Shoot Out 計時 |
+| `wpa-heyball-rules.md` | WPA Rules of Heyball 2025 | §3 裁判行為準則、計時/暫停/申訴 |
+
+> 重查方式：`markitdown sources/<檔>.pdf` 或直接讀 `sources/<檔>.md`（已轉好）。
+</script><div class="rendered" id="doc-5"></div></section>
+  </main>
+</div>
+<button class="backtop" id="backtop" aria-label="back to top">↑</button>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script>
+(function(){
+  marked.setOptions({gfm:true, breaks:false});
+  document.querySelectorAll('script[type="text/markdown"]').forEach(function(s){
+    var i = s.id.split('-')[1];
+    var t = document.getElementById('doc-'+i);
+    try{ t.innerHTML = marked.parse(s.textContent.trim()); }
+    catch(e){ t.textContent = s.textContent; }
+  });
+
+  document.querySelectorAll('.rendered table').forEach(function(tb){
+    var w=document.createElement('div'); w.className='tbl';
+    tb.parentNode.insertBefore(w,tb); w.appendChild(tb);
+  });
+
+  var navlist=document.getElementById('navlist');
+  var secs=[].slice.call(document.querySelectorAll('section.doc'));
+  secs.forEach(function(sec,i){
+    sec.id='sec-'+i;
+    var h1=sec.querySelector('h1');
+    var grp=document.createElement('div'); grp.className='navdoc';
+    var a=document.createElement('a'); a.className='navtop'; a.href='#sec-'+i;
+    a.textContent=(sec.dataset.short||(h1?h1.textContent:('Doc '+i)));
+    grp.appendChild(a);
+    var subs=document.createElement('div'); subs.className='subs';
+    [].slice.call(sec.querySelectorAll('h2')).forEach(function(h2,j){
+      h2.id='sec-'+i+'-'+j; h2.style.scrollMarginTop='12px';
+      var sa=document.createElement('a'); sa.href='#sec-'+i+'-'+j;
+      sa.textContent=h2.textContent;
+      subs.appendChild(sa);
+    });
+    grp.appendChild(subs); navlist.appendChild(grp);
+    sec.style.scrollMarginTop='12px';
+  });
+  var navdocs=[].slice.call(document.querySelectorAll('.navdoc'));
+
+  var bar=document.getElementById('bar'), bt=document.getElementById('backtop');
+  function spy(){
+    var h=document.documentElement;
+    var max=h.scrollHeight-h.clientHeight;
+    bar.style.width=(max>0?(h.scrollTop/max*100):0)+'%';
+    bt.classList.toggle('show', h.scrollTop>600);
+    var ai=0;
+    secs.forEach(function(s,i){ if(s.getBoundingClientRect().top<=170) ai=i; });
+    navdocs.forEach(function(g,i){ g.classList.toggle('active', i===ai); });
+    var h2s=[].slice.call(secs[ai].querySelectorAll('h2'));
+    var hj=-1; h2s.forEach(function(x,j){ if(x.getBoundingClientRect().top<=170) hj=j; });
+    document.querySelectorAll('.subs a.on').forEach(function(a){a.classList.remove('on');});
+    var sub=navdocs[ai].querySelectorAll('.subs a');
+    if(hj>=0&&sub[hj]) sub[hj].classList.add('on');
+  }
+  bt.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});
+  window.addEventListener('scroll',spy,{passive:true});
+  window.addEventListener('resize',spy);
+  spy();
+})();
+</script>
+</body>
+</html>

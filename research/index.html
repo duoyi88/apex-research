@@ -1,0 +1,1471 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+
+<!-- APEX access gate (soft, client-side) -->
+<style>
+  html.apexlock body>*:not(#apex-gate){display:none!important}
+  html.apexlock{overflow:hidden}
+  #apex-gate{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#084d2a 0%,#0b6b3a 55%,#12894b 100%);
+    font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft JhengHei",sans-serif}
+  #apex-gate .gbox{width:min(92vw,360px);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);
+    border-radius:18px;padding:34px 30px 28px;box-shadow:0 24px 60px rgba(0,0,0,.32);backdrop-filter:blur(8px);
+    text-align:center;color:#eafaf0}
+  #apex-gate .gicon{width:54px;height:54px;border-radius:50%;margin:0 auto 14px;display:flex;align-items:center;
+    justify-content:center;font-size:26px;background:#e7b53c;color:#3a2c00;font-weight:800;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+  #apex-gate h2{margin:0 0 4px;font-size:21px;font-weight:800;letter-spacing:.5px;color:#fff}
+  #apex-gate p{margin:0 0 20px;font-size:13px;color:#bfe6ce}
+  #apex-gate input{width:100%;padding:13px 15px;border-radius:10px;border:1px solid rgba(255,255,255,.25);
+    background:rgba(0,0,0,.18);color:#fff;font-size:18px;text-align:center;letter-spacing:6px;outline:none;
+    transition:border-color .15s}
+  #apex-gate input:focus{border-color:#e7b53c}
+  #apex-gate button{width:100%;margin-top:12px;padding:12px;border:none;border-radius:10px;cursor:pointer;
+    background:#e7b53c;color:#3a2c00;font-size:15px;font-weight:800;letter-spacing:1px;transition:filter .15s}
+  #apex-gate button:hover{filter:brightness(1.06)}
+  #apex-gate .ge{display:none;margin-top:12px;font-size:12.5px;color:#ffd7d2}
+  #apex-gate.bad .gbox{animation:apexshake .42s}
+  @keyframes apexshake{10%,90%{transform:translateX(-2px)}30%,70%{transform:translateX(5px)}50%{transform:translateX(-7px)}}
+</style>
+<script>
+(function(){
+  var KEY='apex_gate_v1', HASH=193354864;
+  function hf(s){var x=5381;for(var i=0;i<s.length;i++){x=(((x*33)&0xffffffff)^s.charCodeAt(i))>>>0;}return x;}
+  function ok(){try{return sessionStorage.getItem(KEY)==='1';}catch(e){return false;}}
+  if(ok())return;
+  var H=document.documentElement; H.classList.add('apexlock');
+  function build(){
+    if(document.getElementById('apex-gate'))return;
+    var o=document.createElement('div'); o.id='apex-gate';
+    o.innerHTML='<div class="gbox"><div class="gicon">&#9899;</div>'+
+      '<h2>APEX 研究中心</h2><p>請輸入通行密碼以檢視內容</p>'+
+      '<input type="password" inputmode="numeric" autocomplete="off" aria-label="password" placeholder="•••">'+
+      '<button type="button">進入</button>'+
+      '<div class="ge">密碼錯誤，請再試一次</div></div>';
+    (document.body||H).appendChild(o);
+    var inp=o.querySelector('input'), btn=o.querySelector('button'), err=o.querySelector('.ge');
+    function submit(){
+      if(hf((inp.value||'').trim())===HASH){
+        try{sessionStorage.setItem(KEY,'1');}catch(e){}
+        o.parentNode&&o.parentNode.removeChild(o); H.classList.remove('apexlock');
+      }else{
+        o.classList.add('bad'); err.style.display='block'; inp.value=''; inp.focus();
+        setTimeout(function(){o.classList.remove('bad');},460);
+      }
+    }
+    btn.addEventListener('click',submit);
+    inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();submit();}});
+    setTimeout(function(){inp.focus();},30);
+  }
+  if(document.body){build();}
+  else{document.addEventListener('DOMContentLoaded',build);
+    // also try ASAP so the overlay paints before body content
+    var t=setInterval(function(){if(document.body){clearInterval(t);build();}},8);}
+})();
+</script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>撞球跨賽制統一評分系統研究 · APEX</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<style>
+  :root{
+    --felt:#0b6b3a; --felt-dark:#084d2a; --felt-light:#12894b;
+    --ink:#1a2230; --muted:#5b6776; --line:#e3e8ee; --bg:#f6f8fa;
+    --card:#ffffff; --accent:#e7b53c; --chalk:#2b6cb0;
+    --radius:14px; --shadow:0 1px 3px rgba(16,32,55,.06),0 8px 24px rgba(16,32,55,.06);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft JhengHei",sans-serif;
+    color:var(--ink);background:var(--bg);line-height:1.78;-webkit-font-smoothing:antialiased}
+  a{color:var(--chalk);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  /* progress bar */
+  #bar{position:fixed;top:0;left:0;height:3px;width:0;z-index:50;
+    background:linear-gradient(90deg,var(--accent),var(--felt-light))}
+
+  /* layout */
+  .wrap{display:grid;grid-template-columns:282px 1fr;max-width:1320px;margin:0 auto}
+  nav.side{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;
+    background:var(--felt-dark);color:#dff3e6;padding:24px 16px 40px}
+  nav.side .brand{font-weight:800;font-size:20px;color:#fff;letter-spacing:.5px}
+  nav.side .brand span{color:var(--accent)}
+  nav.side .sub{font-size:12px;color:#9fd9b8;margin:2px 0 18px}
+  .navlist{counter-reset:nd -1}
+  .navdoc{margin:2px 0}
+  .navtop{display:flex;align-items:center;gap:10px;color:#eafaf0;padding:8px 10px;border-radius:9px;
+    font-size:14.5px;font-weight:600}
+  .navtop::before{counter-increment:nd;content:counter(nd);flex:none;width:22px;height:22px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#1a2230;
+    background:#fff;box-shadow:inset 0 -2px 4px rgba(0,0,0,.25)}
+  .navdoc:nth-child(2) .navtop::before{background:#f5c518}
+  .navdoc:nth-child(3) .navtop::before{background:#1f6fd0;color:#fff}
+  .navdoc:nth-child(4) .navtop::before{background:#d6332e;color:#fff}
+  .navdoc:nth-child(5) .navtop::before{background:#6b3fa0;color:#fff}
+  .navdoc:nth-child(6) .navtop::before{background:#e8801a;color:#fff}
+  .navdoc:nth-child(7) .navtop::before{background:#1f8a4c;color:#fff}
+  .navtop:hover{background:rgba(255,255,255,.08);text-decoration:none}
+  .navdoc.active>.navtop{background:rgba(255,255,255,.16);color:#fff}
+  .subs{display:none;margin:2px 0 8px 32px;border-left:1px solid rgba(255,255,255,.15);padding-left:8px}
+  .navdoc.active .subs{display:block}
+  .subs a{display:block;color:#bfe6ce;font-size:13px;padding:4px 9px;border-radius:7px;margin:1px 0}
+  .subs a:hover{background:rgba(255,255,255,.07);text-decoration:none}
+  .subs a.on{background:var(--accent);color:#3a2c00;font-weight:700}
+
+  main{padding:0 0 90px;min-width:0}
+
+  /* hero */
+  header.hero{background:linear-gradient(135deg,var(--felt) 0%,var(--felt-light) 100%);
+    color:#fff;padding:56px 52px 48px;position:relative;overflow:hidden}
+  header.hero::after{content:"";position:absolute;right:-70px;top:-70px;width:300px;height:300px;
+    background:radial-gradient(circle,rgba(255,255,255,.16),transparent 70%);border-radius:50%}
+  header.hero::before{content:"";position:absolute;left:-40px;bottom:-90px;width:240px;height:240px;
+    background:radial-gradient(circle,rgba(0,0,0,.12),transparent 70%);border-radius:50%}
+  header.hero .eyebrow{font-size:13px;letter-spacing:3px;color:#bdebcf;text-transform:uppercase;font-weight:700}
+  header.hero h1{margin:8px 0 12px;font-size:34px;font-weight:800;letter-spacing:.5px;position:relative;z-index:1}
+  header.hero p{margin:0;max-width:820px;color:#e8f7ee;font-size:16px;position:relative;z-index:1}
+  .pills{margin-top:24px;display:flex;flex-wrap:wrap;gap:9px;position:relative;z-index:1}
+  .pill{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);
+    padding:6px 14px;border-radius:999px;font-size:13px;backdrop-filter:blur(4px)}
+
+  /* doc sections */
+  section.doc{padding:30px 52px;border-bottom:8px solid #eef1f4}
+  .rendered{max-width:880px}
+
+  .rendered h1{font-size:27px;color:var(--felt-dark);margin:8px 0 4px;padding-bottom:12px;
+    border-bottom:3px solid var(--felt);font-weight:800;line-height:1.35}
+  .rendered h2{font-size:21px;margin:36px 0 12px;padding-left:13px;border-left:5px solid var(--felt-light);
+    color:var(--ink);font-weight:700;line-height:1.4}
+  .rendered h3{font-size:16.5px;margin:24px 0 8px;color:var(--felt-dark);font-weight:700}
+  .rendered h4{font-size:15px;margin:16px 0 6px;color:var(--ink)}
+  .rendered p{margin:11px 0}
+  .rendered strong{color:var(--felt-dark);font-weight:700}
+  .rendered ul,.rendered ol{margin:11px 0;padding-left:24px}
+  .rendered li{margin:5px 0}
+  .rendered hr{border:none;border-top:1px dashed var(--line);margin:26px 0}
+  .rendered code{background:#eef3f0;color:#0a5a32;padding:1.5px 6px;border-radius:5px;
+    font-family:"SF Mono",Consolas,Menlo,monospace;font-size:.88em}
+
+  /* blockquote = takeaway callout */
+  .rendered blockquote{margin:18px 0;background:linear-gradient(180deg,#f1f9f4,#eaf6ef);
+    border:1px solid #cfe9da;border-left:5px solid var(--felt);border-radius:12px;
+    padding:14px 20px;color:#143d29;box-shadow:var(--shadow)}
+  .rendered blockquote p{margin:6px 0}
+  .rendered blockquote strong{color:var(--felt)}
+
+  /* tables */
+  .tbl{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);background:#fff;margin:16px 0}
+  .rendered table{border-collapse:collapse;width:100%;font-size:13.6px;min-width:440px}
+  .rendered th,.rendered td{padding:10px 13px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  .rendered thead th{background:var(--felt-dark);color:#fff;font-weight:600;white-space:nowrap;position:sticky;top:0}
+  .rendered tbody tr:nth-child(even){background:#fafcfb}
+  .rendered tbody tr:hover{background:#f0f7f3}
+  .rendered td:first-child,.rendered th:first-child{white-space:nowrap}
+
+  /* code / ascii diagrams */
+  .rendered pre{background:#0d1b14;color:#cfe9d8;padding:20px 22px;border-radius:var(--radius);
+    overflow-x:auto;box-shadow:var(--shadow);margin:18px 0}
+  .rendered pre code{background:none;color:#d3ecdd;padding:0;font-size:12.8px;line-height:1.55;
+    font-family:"SF Mono",Consolas,Menlo,monospace;white-space:pre}
+
+  /* ---- player profile / card components ---- */
+  .rendered .pcard{background:#fff;border:1px solid var(--line);border-radius:14px;
+    box-shadow:var(--shadow);margin:18px 0;overflow:hidden}
+  .rendered .pcard-hd{background:linear-gradient(135deg,var(--felt),var(--felt-light));color:#fff;padding:14px 20px}
+  .pcard-title{font-weight:800;font-size:15.5px;display:block}
+  .pcard-meta{font-size:12.5px;color:#dff3e6}
+  .rendered .pfam{padding:13px 20px;border-top:1px solid var(--line)}
+  .pfam-hd{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+  .fam-badge{font-weight:700;font-size:12.5px;color:#fff;padding:3px 11px;border-radius:7px;flex:none}
+  .famA{background:var(--chalk)} .famC{background:#e8801a}
+  .fam-axis{font-size:12.5px;color:var(--muted)}
+  .rendered .prow{display:grid;grid-template-columns:92px 1fr auto;align-items:center;gap:12px;
+    padding:7px 0;border-top:1px dashed var(--line)}
+  .rendered .prow:first-of-type{border-top:none}
+  .prow .fmt{font-weight:700;font-size:13.5px;color:var(--ink)}
+  .prow .formula{font-family:"SF Mono",Consolas,Menlo,monospace;color:var(--muted);font-size:13px}
+  .prow .formula sub{font-size:.72em}
+  .prow .rtag{font-weight:700;font-size:12px;color:var(--felt-dark);background:#e7f5ec;
+    padding:3px 10px;border-radius:6px;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .prow .rtag.unc{color:#9a6b00;background:#fdf3d7}
+  /* example card with reliability bars */
+  .rendered .pcard-ex .pcard-hd2{display:flex;justify-content:space-between;align-items:center;gap:14px;
+    padding:15px 20px;background:#f2f9f4;border-bottom:1px solid var(--line)}
+  .who{display:flex;align-items:center;gap:12px}
+  .who .avatar{width:42px;height:42px;border-radius:50%;background:var(--felt);color:#fff;display:flex;
+    align-items:center;justify-content:center;font-weight:800;font-size:19px;flex:none}
+  .who-t b{font-size:16px;color:var(--ink)}
+  .who-sub{display:block;font-size:12.5px;color:var(--muted)} .who-sub strong{color:var(--felt-dark)}
+  .rel-badge{background:var(--felt);color:#fff;border-radius:11px;padding:7px 15px;font-weight:800;
+    font-size:17px;text-align:center;white-space:nowrap;flex:none}
+  .rel-badge span{display:block;font-size:10.5px;font-weight:500;color:#dff3e6;letter-spacing:.3px}
+  .bars{padding:12px 20px 16px}
+  .bar-row{display:grid;grid-template-columns:64px 44px 1fr 58px;align-items:center;gap:12px;padding:6px 0}
+  .bar-row .bf{font-weight:700;font-size:13.5px}
+  .bar-row .bv{font-variant-numeric:tabular-nums;font-weight:800;font-size:15px;color:var(--felt-dark)}
+  .bar-row .track{height:11px;background:#e9edf1;border-radius:99px;overflow:hidden}
+  .bar-row .track i{display:block;height:100%;border-radius:99px;background:var(--felt)}
+  .bar-row .track i.mid{background:#3a9d6e}
+  .bar-row .track i.low{background:var(--accent)}
+  .bar-row .bp{font-size:12px;color:var(--muted);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .bar-row.empty .bv{color:#b8c0c9} .bar-row.empty .bp{color:#c08a1a}
+
+  /* ---- purpose -> system map (04 §6) ---- */
+  .rendered .mapcard{margin:18px 0;display:flex;flex-direction:column;gap:8px}
+  .rendered .maprow{display:grid;grid-template-columns:194px 26px 1fr;align-items:center;gap:10px;
+    background:#fff;border:1px solid var(--line);border-radius:11px;padding:10px 16px;box-shadow:var(--shadow)}
+  .maprow .mq{display:flex;flex-direction:column;line-height:1.3}
+  .maprow .mq b{font-size:14.5px;color:var(--ink)}
+  .maprow .mq>span{font-size:12px;color:var(--muted)}
+  .maprow .marrow{color:var(--felt-light);font-weight:800;font-size:18px;text-align:center}
+  .maprow .ma{font-weight:600;font-size:13.6px;padding:7px 13px;border-radius:8px;justify-self:start}
+  .maprow .ma.s1{background:#e7f5ec;color:var(--felt-dark)}
+  .maprow .ma.s2{background:#e6f0fb;color:#1b4f86}
+  .maprow .ma.s3{background:#f1ebf8;color:#5a3392}
+  .maprow .ma.s4{background:#fdf0df;color:#9a5b14}
+
+  /* ---- positioning pipeline (05 §7) ---- */
+  .rendered .flowcard{margin:20px 0;display:flex;flex-direction:column;align-items:center}
+  .flowstep{width:100%;max-width:580px;text-align:center;background:#fff;border:1px solid var(--line);
+    border-radius:12px;padding:13px 18px;box-shadow:var(--shadow);font-size:14px;font-weight:600}
+  .flowstep .flow-k{display:inline-block;font-size:11px;font-weight:800;color:#fff;background:var(--muted);
+    border-radius:6px;padding:2px 9px;margin-right:9px;vertical-align:middle}
+  .flowstep.core{background:linear-gradient(135deg,var(--felt),var(--felt-light));color:#fff;border:none}
+  .flowstep.core .flow-k{background:rgba(255,255,255,.26)}
+  .flowstep.out{background:#f2f9f4;border-color:#cfe9da}
+  .flowstep.out .flow-k{background:var(--felt-light)}
+  .flowarrow{color:var(--felt-light);font-size:22px;font-weight:800;line-height:1;padding:6px 0}
+
+  /* ---- matchup / handicap (06 §7.2) ---- */
+  .rendered .vscard .vshd{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;
+    background:linear-gradient(135deg,var(--felt),var(--felt-light));color:#fff;padding:14px 20px}
+  .vshd .vsp{text-align:center}
+  .vshd .vsp:first-child{text-align:right} .vshd .vsp:last-child{text-align:left}
+  .vshd .vsp b{font-size:16px;display:block}
+  .vshd .vsp>span{font-size:13px;color:#dff3e6;font-variant-numeric:tabular-nums}
+  .vshd .vsx{font-weight:800;font-size:15px;text-align:center;padding:0 6px}
+  .vshd .vsx span{display:block;font-size:11px;font-weight:500;color:#dff3e6}
+  .vsrows{padding:6px 20px 14px}
+  .vsrow{display:grid;grid-template-columns:74px 1fr 16px 1fr auto;align-items:center;gap:10px;
+    padding:9px 0;border-top:1px dashed var(--line)}
+  .vsrow:first-child{border-top:none}
+  .vsrow .vfmt{font-weight:700;font-size:13.5px}
+  .vsrow .vt{text-align:center;font-size:13.5px;color:var(--muted)}
+  .vsrow .vt b{color:var(--felt-dark);font-size:16px;font-variant-numeric:tabular-nums}
+  .vsrow .vcolon{text-align:center;color:#b8c0c9;font-weight:700}
+  .vsrow .vnote{font-size:11.5px;color:var(--muted);text-align:right;white-space:nowrap}
+
+  @media(max-width:600px){
+    .rendered .maprow{grid-template-columns:1fr;gap:5px}
+    .maprow .marrow{display:none}
+    .vsrow{grid-template-columns:58px 1fr 14px 1fr;gap:8px}
+    .vsrow .vnote{display:none}
+  }
+
+  /* katex */
+  .katex-display{margin:16px 0;overflow-x:auto;overflow-y:hidden;padding:6px 2px}
+  .katex{font-size:1.04em}
+
+  .backtop{position:fixed;right:22px;bottom:22px;width:44px;height:44px;border-radius:50%;
+    background:var(--felt);color:#fff;display:none;align-items:center;justify-content:center;
+    box-shadow:var(--shadow);cursor:pointer;font-size:18px;z-index:40;border:none}
+  .backtop.show{display:flex}
+
+  @media(max-width:980px){
+    .wrap{grid-template-columns:1fr}
+    nav.side{position:static;height:auto;overflow:visible}
+    .navlist{display:flex;flex-wrap:wrap;gap:4px}
+    .navdoc{flex:1 1 auto}
+    .subs{display:none!important}
+    header.hero{padding:40px 22px}
+    section.doc{padding:26px 22px}
+  }
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div class="wrap">
+  <nav class="side">
+    <div class="brand">APEX<span>·</span>評分</div>
+    <div class="sub">撞球跨賽制統一評分系統研究</div>
+    <div class="navlist" id="navlist"></div>
+  </nav>
+  <main>
+    <header class="hero">
+      <div class="eyebrow">APEX RATING RESEARCH</div>
+      <h1>撞球跨賽制統一評分系統研究</h1>
+      <p>為 APEX 盃撞球公開賽設計一套類 DUPR 的動態評分系統。核心難題：撞球賽制不統一，存在大量變體（8/9/10 號球、14-1、One Pocket、三顆星開倫、四顆…），一名選手會跨賽制挑戰——積分該如何整合計算？本研究橫向比對全球運動、競技與電競的評分制度，推導出可落地的設計。</p>
+      <div class="pills">
+        <span class="pill">DUPR</span>
+        <span class="pill">Elo · Glicko-2 · TrueSkill</span>
+        <span class="pill">UTR</span>
+        <span class="pill">FargoRate</span>
+        <span class="pill">高爾夫差點 · 十項全能</span>
+        <span class="pill">電競 MMR · 段位</span>
+        <span class="pill">部分匯聚 Partial Pooling</span>
+        <span class="pill">7 篇研究</span>
+      </div>
+    </header>
+<section class="doc" data-short="總覽"><script type="text/markdown" id="md-0">
+# APEX 撞球評分系統研究
+
+> 目標：為 APEX 盃撞球公開賽設計一套類 DUPR 的動態評分系統。
+> 核心難題：撞球賽制**不統一**，存在大量變體（8/9/10 號球、14-1、One Pocket、三顆星開倫、四顆…），
+> 一名選手會跨賽制挑戰，積分該如何整合計算？
+
+---
+
+## 研究文件索引
+
+| 編號 | 文件 | 內容 |
+|------|------|------|
+| 00 | `README.md` | 本檔。研究總覽、導讀、結論摘要 |
+| 01 | `01-DUPR完整解析.md` | DUPR 四維度、完整公式推演、可靠度、情境案例 |
+| 02 | `02-通用評分數學基礎.md` | Elo、Glicko-2、TrueSkill、UTR 的數學核心 |
+| 03 | `03-跨項目歸一化研究.md` | **核心**：高爾夫差點制、十項全能評分表、帆船讓分——如何跨「不同難度/不同項目」歸一 |
+| 04 | `04-電競與其他制度.md` | 電競 MMR/tier/decay/賽季、橋牌 MP、撲克 GPI、羽球 BWF |
+| 05 | `05-撞球原生制度.md` | FargoRate、WPA、斯諾克排名、UMB 開倫、APA Equalizer |
+| 06 | `06-APEX跨賽制統一評分方案.md` | **結論**：APEX 跨賽制統一評分架構設計 |
+
+---
+
+## 三大設計問題
+
+1. **量綱問題（Scale）**：9 號球是「先贏 N 局」，14-1 是「累積分數到 100」，三顆星是「得分到 40」。
+   不同賽制的「一分」價值不同，如何換算到同一把尺？
+2. **技能相關性問題（Correlation）**：8/9/10 號球技能高度相通；但開倫（碰撞式）與進袋（落袋式）幾乎是兩種運動。
+   一場開倫的勝負，能不能、該不該影響選手的進袋積分？
+3. **資料稀疏問題（Sparsity）**：選手在主力賽制資料多，在冷門賽制資料少。
+   冷門賽制的積分如何在「資料不足」時仍給出合理估計？
+
+---
+
+## 結論摘要（完整見 06）
+
+採用**階層式貝葉斯 + 分賽制評分 + 部分匯聚（partial pooling）**架構：
+
+- 每位選手有一個**全域潛在實力** θ（整體桿法天賦），以及**各賽制偏移** δ_f。
+  該賽制有效評分 `R_f = θ + δ_f`。
+- 賽制依技能相通性分**家族**：
+  - A 家族 — 輪轉/進袋（8/9/10 號球）：高度相關，可如 FargoRate 般合併。
+  - B 家族 — 策略進袋（14-1、One Pocket）：與 A 部分相關。
+  - C 家族 — 開倫（三顆星、四顆）：與進袋近乎正交。
+- **資料多**的賽制由選手自己的數據主導；**資料少**的賽制則向全域實力（與相關家族）「收縮（shrinkage）」。
+  ——這正是把高爾夫「差點指數→球場差點」與十項全能「共同計分貨幣」的思想，
+  結合 Glicko 不確定性，推廣到撞球。
+- 採 **score differential（局數/分數比例）** 而非純勝負；加 **recency 時間衰減** 與 **robustness 可靠度**。
+- 對外顯示：各賽制評分 + 一個 Overall + 可靠度%，並能反向產生**讓分賽制（race-to N）** 服務賽會。
+
+---
+
+## 研究方法
+
+本研究透過交叉比對全球主流運動／競技／遊戲評分制度，萃取各自解決
+「動態評分」「跨難度歸一」「不確定性管理」「防作弊」的設計手法，
+再針對撞球多賽制特性做綜合設計。所有公式與案例均附於各分篇。
+
+> 後續：研究收斂後，將製作網頁互動說明（計算機 + 視覺化）。
+</script><div class="rendered" id="doc-0"></div></section>
+<section class="doc" data-short="DUPR 完整解析"><script type="text/markdown" id="md-1">
+# 01 · DUPR 完整解析
+
+> DUPR = Dynamic Universal Pickleball Rating（動態通用匹克球評分）
+> 由 Steve Kuhn 創立，設計理念師承網球的 UTR。是目前運動界「動態技能評分」最成功的落地案例之一。
+
+---
+
+## 1. 基本架構
+
+| 項目 | 設定 |
+|------|------|
+| 評分範圍 | **2.000 – 8.000**（顯示到小數三位） |
+| 新手狀態 | NR（Not Rated，未評分） |
+| 單雙打 | 分開計算（separate singles / doubles） |
+| 更新方式 | 每場比賽後自動動態更新 |
+| 附帶指標 | Reliability Score 可靠度（1–100%） |
+
+DUPR 官方明示評分由**四大因素**決定，以下逐一拆解其數學意涵。
+
+---
+
+## 2. 四大計算維度
+
+### 2.1 Performance vs Expectation（表現 vs 預期）
+每場比賽依雙方評分算出**預期比分**。
+- 得分高於預期 → 評分上升
+- 得分低於預期 → 評分下降
+
+這是所有 Elo 家族的核心：**比的不是輸贏，是「有沒有打贏預期」**。
+
+### 2.2 Type of Match（比賽類型）
+俱樂部/錦標賽 > 自報賽（self-posted）。
+正式賽事的權重（K 因子）更大，自報賽影響較小——防止刷分。
+
+### 2.3 Match Recency（時近性）
+較新的比賽影響權重更大，舊比賽逐漸淡出。
+對應 Glicko 的「不活躍 → 不確定性上升」與時間衰減。
+
+### 2.4 Match Volume（比賽量）
+打越多場，評分越穩定、越可靠（reliability 提升）。
+對應 Glicko 的 RD（rating deviation）下降。
+
+---
+
+## 3. 完整公式推演
+
+DUPR 未完全公開原始碼，但官方說明 + 行為特徵顯示它是
+**Glicko-2 為骨幹 + 比分差修正 + 比賽權重** 的混合體。以下為等效重建。
+
+### Step 1 — 預期得分（Expected Score）
+
+對玩家 A（評分 $r_A$）對玩家 B（評分 $r_B$）：
+
+$$E_A = \frac{1}{1 + 10^{(r_B - r_A)/\alpha}}, \qquad E_A + E_B = 1$$
+
+- $\alpha$：縮放常數。Elo 用 400；DUPR 因評分範圍僅 2–8，量級小，$\alpha$ 對應地小（約 **1.0–1.5**）。
+
+### Step 2 — 實際比分比例（Actual Score Ratio）
+
+DUPR 不用 0/1 勝負，而用**比分比例**：
+
+$$S_A = \frac{\text{A 得分}}{\text{A 得分} + \text{B 得分}}$$
+
+> 例：A 得 11、B 得 7 → $S_A = 11/18 = 0.611$。
+> 這讓「11:0 屠殺」與「11:9 險勝」對評分有不同影響——這是 DUPR 勝過純 Elo 的關鍵。
+
+### Step 3 — 評分更新（Rating Update）
+
+$$r_A' = r_A + K \cdot (S_A - E_A)$$
+
+其中 **動態 K 因子** 綜合三件事：
+
+$$K = K_{\text{base}} \cdot w_{\text{type}} \cdot f_{\text{reliability}}(n)$$
+
+- $w_{\text{type}}$：賽事類型權重（錦標賽 > 俱樂部 > 自報）
+- $f_{\text{reliability}}(n)$：場次 $n$ 越多 → K 越小 → 評分越穩定。
+  典型形式 $f = 1/\sqrt{n+c}$ 或依 Glicko 的 RD 決定。
+
+### Step 4 — 雙打處理
+
+隊伍評分取兩名隊員平均：
+
+$$R_{\text{team}} = \frac{r_1 + r_2}{2}$$
+
+以隊伍評分對隊伍評分算 $E$，賽後**每名隊員個別更新**，
+個人調整幅度依各自的場次數與時近性而定。
+
+---
+
+## 4. 可靠度（Reliability）的數學
+
+可靠度本質是 Glicko 的 **RD（rating deviation）** 換算成 0–100%。
+
+不活躍時 RD 隨時間上升（評分變「不確定」）：
+
+$$\phi' = \sqrt{\phi^2 + \tau^2 \cdot t}$$
+
+比賽後 RD 收斂（評分變「確定」）：
+
+$$\phi'' = \left(\frac{1}{\phi'^2} + \frac{1}{v}\right)^{-1/2}$$
+
+其中 $v$ 是該批比賽提供的資訊量。可靠度顯示給玩家的意義：
+
+| 可靠度 | 意義 |
+|--------|------|
+| 低 | 場次少或資料過期，評分僅供參考 |
+| 60% | 達基本可靠（約需 5–10 場有效對局） |
+| 100% | 高度可靠，準確反映當前實力 |
+
+---
+
+## 5. 情境案例
+
+### 情境 A — 強者爆冷輸給弱者
+- X = 6.5（高手），Y = 4.0（新手），結果 Y 以 11:7 勝（$\alpha=1.0$）
+
+$$E_X = \frac{1}{1+10^{(4.0-6.5)/1.0}} = \frac{1}{1+10^{-2.5}} \approx 0.997,\quad E_Y \approx 0.003$$
+
+$$S_Y = 11/18 = 0.611 \Rightarrow \Delta r_Y = K(0.611 - 0.003) = +0.608K$$
+$$S_X = 7/18 = 0.389 \Rightarrow \Delta r_X = K(0.389 - 0.997) = -0.608K$$
+
+→ 爆冷造成大幅移動，系統快速修正錯誤評分。
+
+### 情境 B — 勢均力敵
+- A = 5.2，B = 5.0，結果 A 以 11:9 勝
+
+$$E_A = \frac{1}{1+10^{(5.0-5.2)/1.0}} \approx 0.556,\quad S_A = 11/20 = 0.55$$
+$$\Delta r_A = K(0.55 - 0.556) = -0.006K \approx 0$$
+
+→ 符合預期的勝利幾乎不動分；甚至因為比分太接近，贏家還略降。
+
+### 情境 C — 新人高不確定性
+- 新人 C 初始 4.0、RD 高，對 100% 可靠的 5.0，C 以 11:8 勝。
+- 因 RD 高，C 的 K 是老手的 2–3 倍 → 評分快速跳向真實水平。
+
+---
+
+## 6. 對 APEX 的啟示
+
+| DUPR 元件 | 對撞球的可借鏡點 |
+|-----------|------------------|
+| 比分比例 $S$ | 撞球可用「局數比例」或「分數比例」直接對應 |
+| 動態 K | 大賽、資料量、時近性決定移動幅度——撞球完全適用 |
+| 可靠度 | 防止冷門賽制少量資料給出過度自信的評分 |
+| 單/雙打分離 | 撞球可推廣為**單一賽制分離評分**（見 06） |
+| NR 起步 | 新手用 starter rating 過渡（FargoRate 也這麼做） |
+
+> **但 DUPR 沒解決的**：匹克球只有一種比賽。撞球的真正難題——
+> 跨多賽制如何整合——DUPR 並未觸及，需另尋（見 03 跨項目歸一化、06 方案）。
+</script><div class="rendered" id="doc-1"></div></section>
+<section class="doc" data-short="通用評分數學基礎"><script type="text/markdown" id="md-2">
+# 02 · 通用評分數學基礎
+
+> 四套「動態技能評分」的數學核心：Elo → Glicko → Glicko-2 → TrueSkill，以及 UTR。
+> 它們是 DUPR、FargoRate 與本專案方案的共同祖先。
+
+---
+
+## 1. Elo（西洋棋起源，一切的根）
+
+**預期勝率：**
+
+$$E_A = \frac{1}{1 + 10^{(R_B - R_A)/400}}$$
+
+**評分更新：**
+
+$$R_A' = R_A + K\,(S_A - E_A)$$
+
+- $S_A \in \{1, 0.5, 0\}$（勝/和/負）
+- $K$：最大單場變動。大師 16，新手 32
+- 「400」的意義：差 400 分 → 強者期望勝率約 91%（10:1）；差 200 分 ≈ 76%
+
+| 優點 | 缺點 |
+|------|------|
+| 極簡單、透明、可手算 | 不含不確定性（新手老手同樣 K 不合理） |
+| 自我修正 | 只看勝負，不看贏多少 |
+| 任意可比 | 不活躍無法表達；初期收斂慢 |
+
+> **撞球啟示**：Elo 是底層引擎，但需要補上「比分差」與「不確定性」兩塊。
+
+---
+
+## 2. Glicko（加入 RD：不確定性）
+
+Glickman 1995 的貢獻：**RD（Rating Deviation，評分偏差）**——
+量化「我們對這個評分有多確定」。RD 即一個標準差。
+
+**不活躍時 RD 隨時間膨脹：**
+
+$$RD = \min\!\left(\sqrt{RD_0^2 + c^2 t},\ 350\right)$$
+
+- $t$：距上次比賽的時間；$c$：膨脹速率常數；350 = 全新玩家的 RD
+
+**核心更新（單一評分期內對 m 個對手）：**
+
+$$r' = r_0 + \frac{q}{\frac{1}{RD^2} + \frac{1}{d^2}} \sum_{i=1}^{m} g(RD_i)\,\bigl(s_i - E(r_0, r_i, RD_i)\bigr)$$
+
+$$g(RD_i) = \frac{1}{\sqrt{1 + 3q^2 RD_i^2/\pi^2}}, \quad q = \frac{\ln 10}{400} = 0.0057565$$
+
+$$E(r_0, r_i, RD_i) = \frac{1}{1 + 10^{-g(RD_i)(r_0 - r_i)/400}}$$
+
+**RD 比賽後收斂：**
+
+$$RD' = \sqrt{\left(\frac{1}{RD^2} + \frac{1}{d^2}\right)^{-1}}$$
+
+**關鍵直覺：**
+- 對手 RD 高（實力不明）→ $g$ 小 → 這場提供的資訊少 → 自己分數動得少。
+- 自己 RD 高（評分不準）→ 分母小 → 自己分數動得多（快速收斂）。
+
+> **撞球啟示**：這就是「冷門賽制資料少 → 評分不確定 → 該謹慎」的數學語言。
+
+---
+
+## 3. Glicko-2（再加入 σ：波動率）— DUPR 的骨幹
+
+多了一個 **volatility σ**（波動率），衡量選手成績的「穩定 vs 起伏」。
+σ 預設 0.06；表現一致 σ 小，忽強忽弱 σ 大。
+
+**換算到內部尺度：**
+
+$$\mu = \frac{r - 1500}{173.7178}, \qquad \phi = \frac{RD}{173.7178}$$
+
+**輔助量（資訊量 v 與位移 Δ）：**
+
+$$v = \left[\sum_j g(\phi_j)^2\, E\,(1-E)\right]^{-1}, \qquad \Delta = v \sum_j g(\phi_j)\,(s_j - E)$$
+
+**新波動率** σ′ 透過迭代解 $f(x)=0$（Illinois 演算法）求得，
+其中 $\tau$（系統常數，0.2–1.2）約束 σ 變化幅度。
+
+**新 RD 與新評分：**
+
+$$\phi' = \frac{1}{\sqrt{\frac{1}{\phi^2 + \sigma'^2} + \frac{1}{v}}}, \qquad \mu' = \mu + \phi'^2 \sum_j g(\phi_j)(s_j - E)$$
+
+| 用途 | Chess.com、Lichess、Dota 2、CS2、Rocket League |
+|------|-----|
+
+> **撞球啟示**：σ 能捕捉「狀態起伏大」的選手——撞球手感波動明顯，這維度有價值。
+
+---
+
+## 4. TrueSkill（Microsoft，貝葉斯 / 支援多人團隊）
+
+每位選手的實力是高斯分布 $\mathcal{N}(\mu, \sigma^2)$：
+
+$$s_i \sim \mathcal{N}(\mu_i, \sigma_i^2), \qquad p_i \sim \mathcal{N}(s_i, \beta^2)$$
+
+- $\beta$：單場表現噪音；團隊表現 = 成員表現之和。
+- 用 **factor graph + expectation propagation** 做近似貝葉斯推論。
+
+**對外顯示保守分（避免新手虛高）：**
+
+$$\text{display} = \mu - 3\sigma$$
+
+預設值：$\mu_0 = 25,\ \sigma_0 = 25/3,\ \beta = 25/6,\ \tau = 25/300$。
+
+| 優點 | 缺點 |
+|------|------|
+| 原生支援 >2 人、團隊賽 | 計算複雜、難向玩家解釋 |
+| 收斂快（少量比賽即定位） | 專利顧慮（雖已較寬鬆） |
+
+> **撞球啟示**：若 APEX 要做雙打/團體賽，TrueSkill 的「團隊=成員和」與
+> 「保守顯示分 μ−3σ」是現成解法。**μ−kσ 也是防刷分上榜的好設計**。
+
+---
+
+## 5. UTR（網球，與 DUPR 最神似）
+
+| 項目 | 設定 |
+|------|------|
+| 範圍 | 1.00 – 16.50 |
+| 取樣 | 最近 12 個月、最多 30 場 |
+| 關鍵 | 看**盤局得分比例**（非純勝負）+ 對手強度 |
+| 計算 | 每場產生一個 match rating，再加權平均 |
+
+$$\text{UTR} = \frac{\sum_i w_i\, r_i^{\text{match}}}{\sum_i w_i}$$
+
+權重 $w_i$ 隨**時近性**與**對手可靠度**調整。
+研究指出：UTR 差 1.0 以內 → 競爭性比賽機率高 2–3 倍；差 >1.0 → 弱者爆冷僅約 3%。
+
+> **撞球啟示**：UTR 的「每場先各自算一個表現分，再加權平均」是另一種架構
+>（**batch/retrospective** 而非 Elo 的 **incremental**），對小樣本更穩，值得參考。
+
+---
+
+## 6. 兩種計算哲學（對 APEX 很重要）
+
+| 哲學 | 代表 | 作法 | 適合 |
+|------|------|------|------|
+| **增量式 Incremental** | Elo、Glicko | 每場即時加減 | 比賽量大、要即時 |
+| **回溯式 Batch / Global** | FargoRate、UTR | 蒐集一批資料後**整體最佳化** | 樣本少、要準、跨群體可比 |
+
+FargoRate 的「每日對全球資料做一次最大似然全域最佳化」屬後者，
+**特別適合撞球這種地區性、資料相對稀疏、又要全球可比的場景**（見 05、06）。
+</script><div class="rendered" id="doc-2"></div></section>
+<section class="doc" data-short="跨項目歸一化（核心）"><script type="text/markdown" id="md-3">
+# 03 · 跨項目歸一化研究（核心）
+
+> 本篇直面 APEX 的真正難題：**同一個人在不同難度/不同項目的表現，如何放到同一把尺上比較？**
+> 撞球的「9 號球 vs 14-1 vs 三顆星」問題，在別的運動裡早有四種成熟解法。
+
+---
+
+## 解法總覽
+
+| 解法 | 代表 | 核心思想 | 對撞球的對應 |
+|------|------|----------|--------------|
+| **A. 難度係數歸一** | 高爾夫 Course/Slope | 把成績用「球場難度」校正後再比 | 各賽制給難度係數 |
+| **B. 共同計分貨幣** | 十項全能評分表 | 各項成績用公式換算成同一種「點數」 | 各賽制表現→共同分 |
+| **C. 讓分標準尺** | 帆船 Yardstick / PHRF | 不同器材用「讓分時間」拉平 | race-to N 讓局 |
+| **D. 分項目各自評分** | 西洋棋 慢/快/超快棋 | 乾脆每項目一個獨立評分，不強行合併 | 各賽制獨立 Rating |
+
+---
+
+## A. 高爾夫差點制（World Handicap System）
+
+**問題**：同一個人在簡單球場打 85 桿，在魔王球場打 95 桿，哪次打得好？
+**答案**：用球場難度把桿數「正規化」成一個與球場無關的**差點指數**。
+
+### 兩個關鍵難度評級
+
+| 評級 | 意義 | 範圍 |
+|------|------|------|
+| **Course Rating** | 一個 scratch（0 差點）高手在此球場的期望好成績 | 約 67–77 |
+| **Slope Rating** | 此球場對「中段球員 vs 高手」的相對難度 | 55–155，標準 = **113** |
+
+### 核心公式
+
+**單場成績差（Score Differential）：**
+
+$$\text{Differential} = \frac{113}{\text{Slope}} \times (\text{adjusted gross} - \text{Course Rating} - \text{PCC})$$
+
+- 用 `113/Slope` 把「這座球場的一桿」換算成「標準難度的一桿」。**這就是歸一化的精髓。**
+- PCC = 當日天候/場地修正（Playing Conditions Calculation）。
+
+**差點指數（Handicap Index）** = 最近 20 場取**最佳 8 場** Differential 的平均：
+
+$$\text{Handicap Index} = \frac{1}{8}\sum_{\text{best 8 of 20}} \text{Differential}$$
+
+**回到某球場的實戰差點（Course Handicap）：**
+
+$$\text{Course Handicap} = \text{Index} \times \frac{\text{Slope}}{113} + (\text{Course Rating} - \text{Par})$$
+
+### 設計巧思（撞球可直接偷師）
+- **取最佳 N 場而非全部平均**：差點反映「潛力/最佳表現」，不是平均水準。
+- **soft cap / hard cap**：限制差點短期暴漲（漲幅 >3.0 砍半，>5.0 封頂），防止「養傷裝爛」。
+- **單根錨點**：用過去 365 天最低指數當錨，抑制異常波動。
+- **每洞封頂（net double bogey）**：單洞爆桿不會毀掉整體評分——對應撞球「單局慘敗不該過度懲罰」。
+
+> **撞球對應**：把「每個賽制」想成「一座球場」。
+> 9 號球是標準球場（Slope 113），One Pocket 是魔王球場（Slope 高）。
+> 給每個賽制一組 `(Format Rating, Format Slope)`，選手在任一賽制的表現都能換算回
+> **單一賽制無關的 APEX 指數**。這是方案 06 的支柱之一。
+
+---
+
+## B. 十項全能評分表（Decathlon Scoring Tables）
+
+**問題**：100 公尺跑 10.5 秒，跟跳遠 7.8 公尺，誰比較強？單位都不同！
+**答案**：每個項目用一條**換算公式**，把成績變成同一種「點數」。
+
+### 核心公式
+
+跑步類（越快越高分）：
+
+$$\text{Points} = \big\lfloor A\,(B - P)^C \big\rfloor$$
+
+田賽類（越遠/越高越高分）：
+
+$$\text{Points} = \big\lfloor A\,(P - B)^C \big\rfloor$$
+
+- $P$：成績（秒 / 公尺 / 公分）
+- $A, B, C$：**每個項目各有一組參數**（World Athletics 公布）
+- $B$ 可理解為「零分基準線」，$C$ 決定難度曲線的彎曲程度（C>1 → 越高分越難拿）
+
+| 項目 | A | B | C |
+|------|-----|-----|-----|
+| 100 m | 25.4347 | 18 | 1.81 |
+| 跳遠 | 0.14354 | 220 | 1.40 |
+| 鉛球 | 51.39 | 1.5 | 1.05 |
+| 1500 m | 0.03768 | 480 | 1.85 |
+
+10 項點數**直接相加** = 總分。9000 分以上即世界級。
+
+### 設計巧思
+- **非線性曲線（C 次方）**：頂尖區間越往上越難加分，避免單項偏才壟斷。
+- **可加性**：換算成共同貨幣後就能直接加總、直接比較。
+- **可校正族群**：大師組（Masters）先做 age-grading 再套表——對應撞球可做
+  「器材/檯型校正」（9 呎檯 vs 7 呎檯）。
+
+> **撞球對應**：替每個賽制設計一條 `表現 → APEX 點數` 的換算函數。
+> 14-1 跑到 100 分、三顆星打出 1.5 的 GPA（高得分率），都能換算成可比的點數。
+> 但**純十項全能式相加不適合撞球**——因為選手不會打滿所有賽制，
+> 且賽制間技能相關（不像跑跳擲彼此獨立）。撞球要的是「換算」概念，不是「相加」。
+
+---
+
+## C. 帆船讓分制（Portsmouth Yardstick / PHRF）
+
+**問題**：不同船型速度天生不同，同場競速怎麼公平？
+**答案**：給每種船一個**讓分係數**，用修正後時間（corrected time）比，而非實際時間。
+
+$$\text{Corrected Time} = \text{Elapsed Time} \times \frac{\text{標準 Yardstick}}{\text{該船型 Handicap Number}}$$
+
+- 慢船的時間被「放大優惠」，快船被「壓縮」，拉到同一基準。
+- PHRF 則用「每海里讓幾秒」的方式調整。
+
+### 設計巧思
+- **器材/級別中立**：關注「相對於同級別期望的表現」，而非絕對值。
+- 係數由歷史資料持續校準。
+
+> **撞球對應**：這正是 **讓分賽（race-to 不同局數）** 的理論基礎。
+> FargoRate 的「9–7 讓分賽」、APA 的 Equalizer 表，本質都是 Yardstick。
+> APEX 評分系統的**輸出**之一，就該能反向生成這種公平讓分表（見 06 §輸出層）。
+
+---
+
+## D. 西洋棋多賽制：分項目各自評分（最務實）
+
+FIDE / Chess.com 的作法最簡單也最誠實：
+**慢棋（Classical）、快棋（Rapid）、超快棋（Blitz）各維護一個獨立 Elo。**
+
+- 不強行把三者壓成一個數字——因為它們確實是**不同能力**。
+- 玩家檔案上並列三個評分。
+
+### 為什麼這對撞球極重要
+- 開倫（碰撞）與進袋（落袋）的技能相關性，可能比慢棋 vs 快棋還低。
+- **強行合成單一數字會失真**：一個三顆星大師可能完全不會打 One Pocket。
+
+但純獨立評分也有缺點：
+- **冷門賽制資料太少** → 評分不可靠。
+- 無法回答「這個人整體有多強」。
+
+> **撞球對應（關鍵綜合）**：
+> 答案不是「全合併」（FargoRate 式）也不是「全獨立」（FIDE 式），
+> 而是**部分匯聚（partial pooling）**——
+> 各賽制有自己的評分，但透過一個「全域實力」彼此**借力**：
+> 資料多時相信自己的數據，資料少時向全域實力收縮。
+> 這就是階層式貝葉斯，方案 06 的核心。
+
+---
+
+## 四解法對撞球的取捨總結
+
+| 解法 | 採用程度 | 在 APEX 的角色 |
+|------|----------|----------------|
+| A 高爾夫 Slope | ★★★★ | 賽制難度係數、取最佳N場、soft/hard cap、單局封頂 |
+| B 十項全能換算 | ★★★ | 「表現→共同點數」的換算函數；但**不相加** |
+| C 帆船讓分 | ★★★ | **輸出**：反向生成 race-to 讓分表 |
+| D 西洋棋分立 | ★★★★★ | 骨架：分賽制評分，但用 partial pooling 改良 |
+
+> **一句話**：撞球要的是
+> 「**西洋棋的分立骨架** + **高爾夫的難度歸一** + **貝葉斯的部分匯聚** + **帆船的讓分輸出**」。
+</script><div class="rendered" id="doc-3"></div></section>
+<section class="doc" data-short="電競與其他制度"><script type="text/markdown" id="md-4">
+# 04 · 電競、橋牌、撲克、羽球積分制度
+
+> 涵蓋：電競 MMR/tier/賽季制、橋牌 Master Points、德州撲克 GPI、羽球 BWF、斯諾克排名。
+> 重點萃取：哪些設計手法對撞球積分有直接價值。
+
+---
+
+## 1. 電競（E-Sports）評分
+
+### 1.1 隱藏 MMR + 可見段位（雙軌制）
+
+幾乎所有主流電競都採「**隱藏技能值 + 可見段位**」雙軌設計：
+
+| 層 | 名稱 | 功能 |
+|----|------|------|
+| 底層 | Hidden MMR / TrueSkill μ | 演算法實際配對依據，精確但數字不好看 |
+| 表層 | 段位（Bronze→Diamond→Master） | 對玩家展示，視覺化進度感，防焦慮 |
+
+兩者非線性對應：Diamond 1 可能對應 3200–3500 MMR。
+**段位有「保護機制」**：剛升段時有若干場次保護，防止立刻掉段（心理留存設計）。
+
+### 1.2 各大電競系統比較
+
+| 遊戲 | 底層算法 | 可見層 | 特色設計 |
+|------|---------|--------|----------|
+| **League of Legends** | Elo 變種 | Iron→Challenger（9 tier × 4 division） | LP 制：勝+加、負−扣；連勝 streak bonus |
+| **Valorant** | Elo + performance score | Iron→Radiant | Headshot 率等個人表現影響加分 |
+| **CS2 (CS:GO)** | Glicko-2 | Silver→Global Elite | 官方未公開；Premier mode 用 Rating 2.0 |
+| **Dota 2** | Glicko 衍生 | Herald→Immortal | Calibration 10 場定初始；MMR 完全公開 |
+| **Rocket League** | Glicko-2 | Bronze→Supersonic Legend | **最透明**：MMR 直接顯示 + 段位 |
+| **Overwatch 2** | TrueSkill 2 | Bronze→Champion | 每賽季重新定位 placement |
+| **TFT（自走棋）** | MMR | Iron→Challenger | 8 人多方排名（非純 1v1）→ TrueSkill 多排名延伸 |
+| **Starcraft II** | MMR | Bronze→Grandmaster | 即時 MMR 顯示；賽季末軟重置 |
+
+### 1.3 電競五大設計機制（對撞球高價值）
+
+#### ① Placement Matches（定位賽）
+新賽季 / 新玩家先打 5–10 場定位賽，這段期間 K factor 極大（快速收斂），
+定位後才「進入穩定評分模式」。
+→ **APEX 對應**：新選手的前 N 場視為「定位期」，Robustness 未達標前 K 值放大。
+
+#### ② Seasonal Reset（賽季重置）
+每賽季（3–6 個月）結束時，評分**軟性壓縮**（soft reset）：
+$$\mu_{\text{new season}} = c \cdot \mu_{\text{final}} + (1-c) \cdot \mu_{\text{average}}, \quad c \approx 0.75$$
+不歸零，但向均值收縮，讓每賽季都有重新出發感。
+→ **APEX 對應**：年度或半年度賽季制，讓沉寂選手有重新崛起機會；防止老積分永遠壓頂。
+
+#### ③ Decay（不活躍懲罰）
+高段位（如 Diamond+）若超過一定天數不出賽，每天自動扣 LP/MMR，
+迫使頂尖選手保持活躍才能維持排名。
+→ **APEX 對應**：Glicko RD 膨脹等效；或更強的每月 −X 機制。
+
+#### ④ Performance Score 個人貢獻調整（Valorant / CS2）
+隊伍勝利但個人表現極差 → 加分縮水；隊伍失敗但個人 MVP → 扣分縮水。
+→ **APEX 雙打對應**：雙打輸了但個人局數佔比高 → 個人扣分適度縮小。
+
+#### ⑤ Streak Bonus / Momentum
+連勝 N 場加速上升（streak bonus），連敗 N 場加速修正。捕捉「狀態熱/冷」。
+→ **APEX 對應**：波動率 σ（Glicko-2）自動處理這個：連勝 → σ 升 → 移動加快。
+
+---
+
+### 1.4 電競賽事積分（GPI / Circuit Points）— 與 MMR 的區別
+
+電競另有**賽事電路積分**（Tournament Circuit Points），與 MMR 完全獨立：
+- 積分決定**世界賽參賽資格**，非技術水平
+- 基於賽事名次 × 賽事權重，12 或 24 個月滾動
+- 類似斯諾克、WTA 積分
+
+→ 這告訴我們：**技能評分（Rating）** 與 **錦標賽積分（Points）** 是兩個不同系統，應分開設計。
+
+---
+
+## 2. 橋牌 Master Points（累積里程碑制）
+
+橋牌（Contract Bridge）用 **Master Points（MP）** 衡量選手資歷，而非即時技術水平。
+
+| 特性 | 說明 |
+|------|------|
+| 只增不減 | MP 終生累積，打越多賽事 MP 越多，永不扣除 |
+| 按賽事等級分層 | 俱樂部 MP（黑）→ 地區 MP（紅）→ 全國 MP（金/白金）→ 世界 MP |
+| 等級認定 | MP 達到門檻即晉升「Life Master」「Grand Life Master」 |
+| 無預期值修正 | 不管你是強手還是弱手，拿第一名積分相同 |
+
+**本質**：里程碑（Achievement）制度，而非技能評分。衡量「參與度 + 成就」而非「當前實力」。
+
+→ **對撞球的啟示**：APEX 可以在技能評分（Elo 系）之外，
+  另設**榮譽積分 / 參與積分**作為終生累積里程碑，滿足「老選手尊重感」需求。
+  兩個系統並行，各司其職。
+
+---
+
+## 3. 德州撲克 GPI（Global Poker Index）
+
+撲克沒有「技能評分」——因為短期樣本太小、運氣成份太大——
+取而代之的是 **GPI = 近期錦標賽獎金加權排名**。
+
+$$\text{GPI Score} = \sum_{i=1}^{N} w_i \cdot \text{Points}_i$$
+
+- 最近 6 個月：weight = 1.0
+- 7–12 個月：weight = 0.75（每個月遞減 0.25/6）
+- 12–24 個月：weight = 0 → 0.5（更長期的緩慢淡出）
+
+**賽事得分 Points** = $f(\text{名次},\ \text{參賽人數},\ \text{賽事等級})$
+
+例：WSOP Main Event 冠軍 ≈ 4000 points；普通地區賽冠軍 ≈ 100 points。
+
+→ **對撞球的啟示**：
+1. **滾動時間窗口**（rolling window，非固定賽季）讓選手隨時都有動機出賽。
+2. **名次 × 人數 × 賽事等級** 三軸計分，是評估「錦標賽積分」的好架構。
+3. 撲克的教訓：若樣本太小（選手一年只打幾場），純技能 Elo 誤差大 → 需要 Glicko 的 RD 保護。
+
+---
+
+## 4. 羽球 BWF 世界排名（積分累積制）
+
+| 項目 | 設定 |
+|------|------|
+| 積分計算 | 最近 **52 週**成績，每個賽事最多計 **10 場** |
+| 賽事分類 | World Tour Finals＞1000＞750＞500＞300＞100（分值不同） |
+| 項目分立 | 男單/女單/男雙/女雙/混雙各一個獨立排名 |
+| 積分方式 | 按名次給積分，同一賽事最多取一次（不重複計算） |
+
+### 與技能評分的本質差異
+
+BWF 是**錦標賽表現積分**而非技能評分：
+- 只衡量「在正式賽事的名次」，不衡量「和誰打、贏幾分」
+- 頂尖選手與業餘選手在 BWF 上的數字沒有可比性
+- **優點**：規則極透明、好溝通；
+- **缺點**：不能說選手 A 有多強，只能說 A 近期打比賽打得好。
+
+→ **對撞球的啟示**：BWF 式積分適合作 APEX **賽事電路排名**（門票資格制），
+  與技能評分並行——但不能取代技能評分來做讓分或配對。
+
+---
+
+## 5. 斯諾克世界排名（獎金累積制）
+
+| 項目 | 設定 |
+|------|------|
+| 計算基礎 | 近 **2 年**（當前賽季＋上一賽季）所有排名賽獎金 |
+| 獎金差距 | 世錦賽冠軍 £500,000；小型排名賽冠軍 £50,000 |
+| 滾動淘出 | 2 年前的成績自動消失，選手必須「保衛」舊成績 |
+| 無技能修正 | 拿同一個冠軍不管對手強弱，積分相同 |
+
+**最大問題**：無法對局數小的業餘選手給出任何評分。
+這也是 APEX 需要另建技能評分系統的根本原因——職業積分制與業餘評分制的需求完全不同。
+
+---
+
+## 6. 各制度定位總結（對 APEX）
+
+<div class="mapcard"><div class="maprow"><span class="mq"><b>技能評分</b><span>誰更強？</span></span><span class="marrow">→</span><span class="ma s1">Elo / Glicko-2 / DUPR 架構</span></div><div class="maprow"><span class="mq"><b>賽事積分</b><span>近期表現好？</span></span><span class="marrow">→</span><span class="ma s2">BWF / GPI / 斯諾克式</span></div><div class="maprow"><span class="mq"><b>資歷里程碑</b><span>打了多久？</span></span><span class="marrow">→</span><span class="ma s3">橋牌 Master Points 式</span></div><div class="maprow"><span class="mq"><b>讓分配對</b><span>這場怎麼公平對打？</span></span><span class="marrow">→</span><span class="ma s4">APA Equalizer / FargoRate race-to</span></div></div>
+
+APEX 同時需要前兩個，第三個是附加價值，第四個是系統**輸出功能**。
+</script><div class="rendered" id="doc-4"></div></section>
+<section class="doc" data-short="撞球原生制度"><script type="text/markdown" id="md-5">
+# 05 · 撞球原生積分制度
+
+> 比較撞球世界現有的四套制度：FargoRate、WPA 排名、斯諾克/WPBSA、APA Equalizer、UMB 開倫。
+> 這是 APEX 系統設計的直接參照點——要知道繼承什麼、改進什麼、捨棄什麼。
+
+---
+
+## 1. FargoRate（最接近 APEX 目標的現有系統）
+
+### 1.1 定位
+
+> "A Fargo Rating of 620 means the same thing in Halifax, Nova Scotia as it does in Christchurch, New Zealand as it does in Phoenix, Arizona."
+
+FargoRate 是目前**進袋撞球（pocket billiards）最接近 DUPR 的系統**——動態技能評分、全球可比、任何層級的選手都在同一把尺上。
+
+### 1.2 核心算法
+
+**底層**：Bradley-Terry 模型——最大似然估計（Maximum Likelihood Estimation, MLE）
+
+給定所有選手互打的「局數輸贏記錄」，求一組評分 $\{r_i\}$ 使得：
+
+$$\Pr(\text{A beats B in one game}) = \frac{10^{r_A/100}}{10^{r_A/100} + 10^{r_B/100}}$$
+
+全域最佳化：**每天凌晨 6 點 GMT，把全球所有選手、所有歷史局數資料一起跑一次 MLE**，
+找出讓所有預測最接近所有結果的一組 $\{r_i\}$。
+
+這不是 Elo 的「一場一場更新」，而是**全域迴歸**——即使你只打了 10 局，也會被
+「別人和你共同對手之間的 10,000 局」間接定位。
+
+**時間加權**：越近的比賽權重越大（FargoRate 未完全公開衰減函數，但明確說有實作）。
+
+### 1.3 評分尺度
+
+| 評分 | 水平 |
+|------|------|
+| 800+ | 世界頂尖（全球少於 20 人） |
+| 700 | 頂尖地區選手（美國約 300 人）；世界級女選手 |
+| 600 | 多次連走（run）三、四桌；有效比率 50–60（14.1） |
+| 500 | 良好聯賽選手；達到中位數 |
+| 400 | 偶爾清台（約 1% 的開局）；新手向老手的分界 |
+| 200 | 初學者，從未清台 |
+
+**尺度特性（對數）**：每差 100 分，高者贏的局數是低者的**兩倍**。
+
+| 評分差 | 公平讓分賽制（高者 race to 9） |
+|--------|-------------------------------|
+| 17 | 弱者 race to 8（約 9:8） |
+| 36 | 弱者 race to 7 |
+| 58 | 弱者 race to 6 |
+| 85 | 弱者 race to 5 |
+| 117 | 弱者 race to 4 |
+| 158 | 弱者 race to 3 |
+| 217 | 弱者 race to 2 |
+| 317 | 弱者 race to 1 |
+
+### 1.4 Robustness（可靠度）
+
+- **200 局以上**：評分「已建立（established）」
+- 未達 200：官方評分 = `f(n) × 表現評分 + (1 - f(n)) × 初始猜測`
+  例：50 局表現評分 580、初始猜 540 → 顯示約 550。
+
+### 1.5 FargoRate 的根本限制（APEX 的切入點）
+
+| 限制 | 說明 |
+|------|------|
+| **只含進袋三種**（8/9/10 號球） | 14-1、One Pocket **未納入** |
+| **不含開倫** | 三顆星、四顆完全不在系統內 |
+| **被動跨地區** | 需要橋樑選手（bridge players）才能把兩個本來分離的社群連起來；小國選手若不出國，事實上和全球孤立 |
+| **防作弊依靠透明度** | 坦率承認「有些人故意輸來壓分」，靠規模優勢（每場都計入）而非算法防護 |
+
+> **APEX 的機會**：在 FargoRate 的精神下，**擴展**到所有撞球賽制（含 14-1、One Pocket、開倫），
+> 並解決跨賽制的「技能相關性」問題——這是 FargoRate 從未嘗試的。
+
+---
+
+## 2. WPA 世界排名（World Pool-Billiard Association）
+
+| 特性 | 說明 |
+|------|------|
+| 計算邏輯 | 按賽事名次給積分，各站積分累加 |
+| 主要賽事 | WPA World 9-Ball / 10-Ball / 8-Ball Championship |
+| 男女分立 | 男子女子各自獨立排名 |
+| 技能評分？ | **否**——純錦標賽名次積分，無 Elo 成份 |
+| 配對功能 | **無**——無法用來決定讓分賽制 |
+
+WPA 排名等同於 BWF 或斯諾克的「誰最近在大賽拿了好名次」，
+不能回答「一個 WPA #50 的選手和一個地方聯賽好手，讓多少分才公平」。
+
+---
+
+## 3. WPBSA / 斯諾克世界排名
+
+| 特性 | 說明 |
+|------|------|
+| 計算基礎 | 滾動 **2 年**所有排名賽**獎金**（不是積分，是真實現金） |
+| 最大賽事 | 世界錦標賽冠軍約 £500,000；大獎賽冠軍 £150,000 |
+| 防禦機制 | 2 年前獎金自動消失，必須不斷出賽「保衛」排名 |
+| 業餘適用？ | **完全不適用**——只適用職業賽選手 |
+| 技能評分？ | **否** |
+
+斯諾克系統是最極端的「職業賽導向」制度，業餘/半職業選手沒有位置。
+
+---
+
+## 4. APA Equalizer（讓分制，非技能評分）
+
+APA（American Poolplayers Association）的 Equalizer 是業餘聯賽最流行的**讓分系統**。
+
+### 8 號球：Skill Level 2–7
+
+| | SL2 | SL3 | SL4 | SL5 | SL6 | SL7 |
+|--|-----|-----|-----|-----|-----|-----|
+| **SL2** | 2/2 | 2/3 | 2/4 | 2/5 | 2/6 | 2/7 |
+| **SL3** | 3/2 | 2/2 | 2/3 | 2/4 | 2/5 | 2/6 |
+| **SL4** | 4/2 | 3/2 | 3/3 | 3/4 | 3/5 | 2/5 |
+| **SL5** | 5/2 | 4/2 | 4/3 | 4/4 | 4/5 | 3/5 |
+| **SL6** | 6/2 | 5/2 | 5/3 | 5/4 | 5/5 | 4/5 |
+| **SL7** | 7/2 | 6/2 | 5/2 | 5/3 | 5/4 | 5/5 |
+
+讀法：SL2 vs SL6 → 2/6（SL2 先贏 2 局，SL6 先贏 6 局）。
+
+### 9 號球：Skill Level 1–9，改計球分
+
+9 號球得分為 1–8 號各 1 分，9 號球 2 分，最高每局 10 分。
+先累積到如下分數者贏：SL1=14, SL2=19, SL3=25, SL4=31, SL5=38, SL6=46, SL7=55, SL8=65, SL9=75。
+
+### APA 的限制
+
+- Skill Level 是**黑盒子**——APA 不公開算法，防止操縱（卻也導致作弊現象「sandbagging」）。
+- 只覆蓋 8 號球與 9 號球，無法延伸到其他賽制。
+- 屬於**靜態分類**（7 個等級），非連續動態評分。
+
+> **對 APEX 的啟示**：APA 的讓分表是 FargoRate race-to 表的簡化版，
+> 可作為「使用者友善呈現方式」的靈感——但底層應用 FargoRate 式連續評分才精確。
+
+---
+
+## 5. UMB 開倫排名
+
+UMB（Union Mondiale de Billard）管轄三顆星（three-cushion）、五柱（five-pins）等開倫賽制。
+
+| 特性 | 說明 |
+|------|------|
+| 計分制度 | 世界盃（World Cup）積分制——各站名次積分累加 |
+| 技能評分？ | **無**——只有名次積分排名 |
+| 關鍵指標 | 三顆星常用「**平均計得分（inning average）**」作為表現指標 |
+| 與 WPA 關係 | 完全分離，UMB 只管開倫，WPA 只管進袋 |
+
+三顆星的「平均計得分（average）」：
+
+$$\text{Average} = \frac{\text{總得分}}{\text{總出桿次數}}$$
+
+世界頂尖選手 average > 2.0；頂尖高手 1.0–1.5；業餘 0.3–0.6。
+
+> **APEX 的機會**：開倫（三顆星/四顆）完全沒有全球技能評分系統。
+> APEX 如果把三顆星的「average」正規化為一個 Fargo 式的技能評分，
+> 是**全球無現成競爭者的藍海領域**。
+
+---
+
+## 6. 撞球原生制度總比較
+
+| 系統 | 賽制涵蓋 | 技能評分 | 讓分功能 | 業餘適用 | 動態更新 |
+|------|---------|---------|---------|---------|---------|
+| **FargoRate** | 8/9/10 球 | ✅ 最佳 | ✅ race-to 表 | ✅ | ✅ 每日 |
+| **WPA 排名** | 9/10/8 球 | ❌ | ❌ | ❌ | ✅ |
+| **WPBSA 斯諾克** | 斯諾克 | ❌ | ❌ | ❌ | ✅ |
+| **APA Equalizer** | 8/9 球 | △ 黑盒 | ✅ 表格式 | ✅ | ❌ 靜態 |
+| **UMB 開倫** | 三顆星/五柱 | ❌ | ❌ | △ | ✅ |
+| **APEX 目標** | **全賽制** | ✅ | ✅ | ✅ | ✅ |
+
+---
+
+## 7. APEX 相對現有系統的定位
+
+APEX 的目標是填補以下空白：
+
+<div class="flowcard"><div class="flowstep"><span class="flow-k">整合</span>FargoRate 進袋技術　＋　開倫支援　＋　14-1 / One Pocket 支援</div><div class="flowarrow">↓</div><div class="flowstep core"><span class="flow-k">核心</span>全賽制統一技能評分　＋　跨賽制部分匯聚</div><div class="flowarrow">↓</div><div class="flowstep out"><span class="flow-k">輸出</span>讓分輸出　＋　賽事電路積分並行</div></div>
+
+**最小可行版本（MVP）**：先從 9 號球切入（最多選手、最多數據），對齊 FargoRate，
+再逐步擴展到 8 號球、10 號球，最後加入 14-1 和三顆星。
+這樣即使開始只有進袋數據，系統也能立刻產生價值。
+</script><div class="rendered" id="doc-5"></div></section>
+<section class="doc" data-short="APEX 統一方案（結論）"><script type="text/markdown" id="md-6">
+# 06 · APEX 跨賽制統一評分方案（結論篇）
+
+> 這是研究的終點，也是設計的起點。
+> 綜合前五篇所有系統的精華，為「一名選手橫跨多種撞球賽制」的場景，
+> 設計一套可落地的統一評分架構。
+
+---
+
+## 0. 問題重述
+
+APEX 的核心難題不是「如何評分」，而是「如何跨賽制評分」：
+
+- 一個選手在 9 號球打 500 Fargo，去打三顆星可能連 0.5 average 都沒有。
+- 一個三顆星大師初次打 One Pocket，根本沒有數據。
+- 強行把所有賽制壓成一個數字，會嚴重失真。
+- 但每個賽制完全獨立，又無法解決「新賽制資料稀疏」的問題。
+
+**解法核心：Partial Pooling（部分匯聚）**——既不完全合併，也不完全分立。
+
+---
+
+## 1. 整體架構
+
+<div class="pcard"><div class="pcard-hd"><span class="pcard-title">玩家檔案 · Player Profile</span><span class="pcard-meta">Overall Index θ（全域撞球天賦）　·　Robustness 可靠度 %</span></div><div class="pfam"><div class="pfam-hd"><span class="fam-badge famA">進袋家族 A（＋B）</span><span class="fam-axis">共用全域軸 θ<sub>A</sub> · 進袋天賦</span></div><div class="prow"><span class="fmt">9-ball</span><span class="formula">R<sub>9</sub> = θ<sub>A</sub> + δ<sub>9</sub></span><span class="rtag">r = 470</span></div><div class="prow"><span class="fmt">8-ball</span><span class="formula">R<sub>8</sub> = θ<sub>A</sub> + δ<sub>8</sub></span><span class="rtag">r = 455</span></div><div class="prow"><span class="fmt">10-ball</span><span class="formula">R<sub>10</sub> = θ<sub>A</sub> + δ<sub>10</sub></span><span class="rtag">r = 480</span></div><div class="prow"><span class="fmt">14-1</span><span class="formula">R<sub>14</sub> = θ<sub>A</sub> + δ<sub>14</sub></span><span class="rtag">r = 440</span></div><div class="prow"><span class="fmt">One Pocket</span><span class="formula">R<sub>op</sub> = θ<sub>A</sub> + δ<sub>op</sub></span><span class="rtag unc">不確定高</span></div></div><div class="pfam"><div class="pfam-hd"><span class="fam-badge famC">開倫家族 C</span><span class="fam-axis">獨立全域軸 θ<sub>C</sub> · 開倫天賦</span></div><div class="prow"><span class="fmt">三顆星</span><span class="formula">R<sub>3</sub> = θ<sub>C</sub> + δ<sub>3</sub></span><span class="rtag">avg = 0.8</span></div><div class="prow"><span class="fmt">四顆</span><span class="formula">R<sub>4</sub> = θ<sub>C</sub> + δ<sub>4</sub></span><span class="rtag unc">不確定高</span></div></div></div>
+
+---
+
+## 2. 賽制家族分類（技能相關性分群）
+
+選手不是一個「全能撞球值」，而是有**兩個全域實力軸**：
+
+| 家族 | 賽制 | 技能相通性 | 全域軸 |
+|------|------|-----------|--------|
+| **A — 輪轉進袋** | 8球、9球、10球 | 極高（同一套打法） | θ_A（進袋天賦） |
+| **B — 策略進袋** | 14-1、One Pocket | 與 A 部分相關（走位更重要） | θ_A（共用，偏移大） |
+| **C — 開倫** | 三顆星、四顆 | 與進袋幾乎正交 | θ_C（開倫天賦，獨立） |
+
+**A+B 共用 θ_A，C 獨立用 θ_C。**
+選手同時存在兩個全域軸，是否合併取決於未來是否有足夠數據。
+
+---
+
+## 3. 分賽制評分公式
+
+### 3.1 單場勝負/比分更新
+
+每個賽制 f 的評分 $R_f$ 獨立更新，使用 **Glicko-2 + Score Differential**：
+
+$$S_A^f = \frac{\text{A 在賽制 f 本場得分（局數）}}{\text{本場總局數}}$$
+
+$$E_A^f = \frac{1}{1 + 10^{(R_B^f - R_A^f)/400}}$$
+
+$$R_A^{f\prime} = R_A^f + K_f \cdot (S_A^f - E_A^f)$$
+
+$$K_f = K_{\max} \cdot w_{\text{type}} \cdot \frac{1}{\sqrt{n_f + 1}} \cdot \frac{1}{\text{Robustness}_f}$$
+
+- $n_f$：選手在賽制 f 已累積局數（非場次）
+- $w_{\text{type}}$：賽事等級權重（見下表）
+
+| 賽事類型 | 權重 $w$ |
+|---------|---------|
+| APEX 盃主賽 | 1.00 |
+| APEX 認證邀請賽 | 0.85 |
+| 地區聯賽 | 0.65 |
+| 俱樂部賽 | 0.40 |
+
+### 3.2 讓分賽的修正
+
+若本場為讓分賽（A race to 9，B race to 7），必須先**還原到公平條件再計算**：
+
+$$E_A^{\text{adj}} = \frac{\text{handicap-adjusted} \Pr(A \text{ wins})}{\text{handicap-adjusted} \Pr(A \text{ wins}) + \Pr(B \text{ wins})}$$
+
+- 用 FargoRate 的讓分對照表，先查「評分差多少對應目前讓分是否公平」
+- 差距過大的懸殊讓分賽，貢獻 K 自動縮水（資訊量有限）
+
+---
+
+## 4. 跨賽制部分匯聚（Partial Pooling）
+
+### 4.1 核心概念
+
+選手在賽制 f 的真實能力 $\mu_f$ 來自**兩個來源的貝葉斯混合**：
+
+$$\mu_f \sim \mathcal{N}(\theta + \beta_f,\ \sigma_f^2)$$
+
+- $\theta$：**全域實力先驗**（從其他相關賽制推算）
+- $\beta_f$：賽制 f 的**個人偏移**（這個人特別擅長或弱的賽制）
+- $\sigma_f^2$：賽制 f 的個人不確定性
+
+**資料多時**：後驗靠近 $\beta_f$ 估計（相信自己的數據）
+**資料少時**：後驗向 $\theta$ 收縮（借用其他賽制的資訊）
+
+收縮強度：
+
+$$\lambda_f = \frac{1/\sigma_f^2}{1/\sigma_f^2 + 1/\tau^2}$$
+
+$\lambda_f$ 越接近 1 = 越靠自己數據；越接近 0 = 越靠全域先驗。
+
+### 4.2 全域實力 θ 的估計
+
+$\theta$ 從「同家族所有賽制的加權平均」推算：
+
+$$\hat{\theta} = \frac{\sum_f \lambda_f \cdot R_f}{\sum_f \lambda_f}$$
+
+其中 $\lambda_f = \text{Robustness}_f \cdot \text{FamilyCorrelation}_f$。
+
+| 賽制對 | 相關係數（估計） |
+|--------|----------------|
+| 9球 ↔ 8球 | 0.90 |
+| 9球 ↔ 10球 | 0.92 |
+| 9球 ↔ 14-1 | 0.65 |
+| 9球 ↔ One Pocket | 0.55 |
+| 9球 ↔ 三顆星 | 0.15 |
+| 三顆星 ↔ 四顆 | 0.80 |
+
+**這些係數是初始估計；隨著 APEX 資料累積，可以用 empirical Bayes 重新校準。**
+
+---
+
+## 5. 高爾夫差點概念的應用
+
+借鑒 WHS 的 **取最佳 N 場** 而非全平均：
+
+$$\text{APEX Index}_f = \frac{1}{N_{\text{best}}} \sum_{\text{best } N \text{ of recent } M} \text{Differential}_f$$
+
+- 每場成績先算 **Score Differential**（vs 預期表現的偏差）
+- 取最近 M=20 場中最佳 N=8 場的平均
+- 反映「潛力/巔峰實力」而非平均水準
+
+**Soft Cap / Hard Cap（防暴漲）：**
+- 單次上升超過 3.0 分：超出部分砍半
+- 單次上升超過 5.0 分：超出部分直接封頂
+- 防止選手打一場爆冷就「評分飛天」
+
+---
+
+## 6. 比賽局數換算（Score Differential 跨賽制統一）
+
+不同賽制的「一場」意義不同，需要換算為**共同單位**：
+
+| 賽制 | 計分單位 | 換算方式 |
+|------|---------|---------|
+| 9/8/10 號球 | 局數（balls per game） | $S = \text{局數} / \text{總局數}$（直接比例） |
+| 14-1 | 累積分數 | $S = \text{A分} / (\text{A分}+\text{B分})$（得分比例） |
+| One Pocket | 入袋顆數（8顆先） | $S = \text{A入袋} / 8$（正規化） |
+| 三顆星 | 雙方都達到目標分（如 40） | $S = \text{A得分} / (\text{A}+\text{B})$（得分比例） |
+
+所有 $S \in [0,1]$，統一套入 $\Delta R = K(S - E)$ 公式。
+
+---
+
+## 7. 系統輸出層
+
+### 7.1 玩家卡片（Player Card）
+
+<div class="pcard pcard-ex"><div class="pcard-hd2"><div class="who"><span class="avatar">張</span><span class="who-t"><b>張○○</b><span class="who-sub">整體 APEX 指數 <strong>512</strong>（進袋）　·　開倫未定</span></span></div><div class="rel-badge">78%<span>可靠度 · 450 局</span></div></div><div class="bars"><div class="bar-row"><span class="bf">9 號球</span><span class="bv">528</span><span class="track"><i style="width:95%"></i></span><span class="bp">95%</span></div><div class="bar-row"><span class="bf">8 號球</span><span class="bv">505</span><span class="track"><i style="width:80%"></i></span><span class="bp">80%</span></div><div class="bar-row"><span class="bf">10 號球</span><span class="bv">510</span><span class="track"><i class="mid" style="width:45%"></i></span><span class="bp">45%</span></div><div class="bar-row"><span class="bf">14-1</span><span class="bv">487</span><span class="track"><i class="low" style="width:30%"></i></span><span class="bp">30%</span></div><div class="bar-row empty"><span class="bf">三顆星</span><span class="bv">—</span><span class="track"></span><span class="bp">資料不足</span></div></div></div>
+
+### 7.2 讓分輸出（Handicap Table）
+
+給定任兩名選手，自動輸出各賽制的公平讓分：
+
+<div class="pcard vscard"><div class="vshd"><span class="vsp"><b>張○○</b><span>512</span></span><span class="vsx">VS<span>評分差 74</span></span><span class="vsp"><b>李○○</b><span>438</span></span></div><div class="vsrows"><div class="vsrow"><span class="vfmt">9 號球</span><span class="vt">張 <b>9</b></span><span class="vcolon">:</span><span class="vt">李 <b>6</b></span><span class="vnote">差 74 ≈ 比值 1:1.7</span></div><div class="vsrow"><span class="vfmt">8 號球</span><span class="vt">張 <b>9</b></span><span class="vcolon">:</span><span class="vt">李 <b>6</b></span><span class="vnote"></span></div><div class="vsrow"><span class="vfmt">14-1</span><span class="vt">張 <b>100</b></span><span class="vcolon">:</span><span class="vt">李 <b>75</b></span><span class="vnote"></span></div></div></div>
+
+### 7.3 賽事電路積分（Tournament Circuit Points）
+
+與技能評分**完全分離**的第二個數字：
+
+$$\text{Circuit Points} = f(\text{名次}) \times w_{\text{賽事等級}} \times \ln(\text{參賽人數}+1)$$
+
+- 決定賽事邀請資格、年終排名
+- 近 52 週滾動（參考 BWF）
+- **不能取代技能評分來做配對**
+
+---
+
+## 8. 防作弊設計
+
+| 問題 | 設計對策 |
+|------|---------|
+| 故意輸球壓低評分（sandbagging） | Soft/Hard Cap 限制單次下降幅度；Robustness 需夠高才有效 |
+| 自報假賽事 | 賽事分等，自報/友誼賽 $w=0.2$；無官方認證的賽事不計入可靠度 |
+| 只打弱手刷分 | 對手 Robustness 低 → K 縮水（資訊量小） |
+| 一場爆冷虛高 | 取最佳 N/M 場 + Soft Cap + 需多場確認 |
+| 退賽迴避比賽記錄 | 退賽記 0 比分計入（視為 0:N 輸） |
+
+---
+
+## 9. 路線圖（Roadmap）
+
+### Phase 1 — MVP（最小可行版本）
+- 只做 9 號球，對齊 FargoRate 尺度
+- 記錄每局局數（非僅勝負），計算 Score Differential
+- Glicko-2 後端，顯示 Robustness
+
+### Phase 2 — 進袋擴展
+- 加入 8 號球、10 號球
+- 實作賽制家族 A 的 Partial Pooling
+- 輸出讓分對照表
+
+### Phase 3 — 策略賽制
+- 加入 14-1、One Pocket
+- 家族 B 橋接，校準 A↔B 相關係數
+
+### Phase 4 — 開倫
+- 三顆星 average → Fargo 尺度換算函數設計
+- 獨立 θ_C 軸
+- **全球第一個開倫技能評分系統**
+
+### Phase 5 — 網頁與 API
+- 玩家卡片頁面
+- 讓分計算機
+- 歷史趨勢圖（評分曲線）
+- 賽事管理整合（報名 → 賽果錄入 → 即時更新）
+
+---
+
+## 10. 一句話總結
+
+> **APEX 評分 = FargoRate 的全域最佳化精神 + Glicko-2 的不確定性管理 + 高爾夫差點的取最佳表現 + 西洋棋的分賽制骨架 + 階層式貝葉斯的跨賽制部分匯聚。**
+
+這是一個從未在撞球領域被實作過的系統，
+特別是在「開倫 + 進袋跨家族統一」這個層次上。
+</script><div class="rendered" id="doc-6"></div></section>
+  </main>
+</div>
+<button class="backtop" id="backtop" aria-label="back to top">↑</button>
+
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked-katex-extension@5.1.1/lib/index.umd.js"></script>
+<script>
+(function(){
+  // ---- render markdown (math-safe via marked-katex-extension) ----
+  if(window.marked && window.markedKatex){
+    marked.use(markedKatex({throwOnError:false, nonStandard:true}));
+  }
+  marked.setOptions({gfm:true, breaks:false});
+  document.querySelectorAll('script[type="text/markdown"]').forEach(function(s){
+    var i = s.id.split('-')[1];
+    var t = document.getElementById('doc-'+i);
+    try{ t.innerHTML = marked.parse(s.textContent.trim()); }
+    catch(e){ t.textContent = s.textContent; }
+  });
+
+  // ---- wrap tables for horizontal scroll ----
+  document.querySelectorAll('.rendered table').forEach(function(tb){
+    var w=document.createElement('div'); w.className='tbl';
+    tb.parentNode.insertBefore(w,tb); w.appendChild(tb);
+  });
+
+  // ---- assign heading ids + build sidebar ----
+  var navlist=document.getElementById('navlist');
+  var secs=[].slice.call(document.querySelectorAll('section.doc'));
+  secs.forEach(function(sec,i){
+    sec.id='sec-'+i;
+    var h1=sec.querySelector('h1');
+    var grp=document.createElement('div'); grp.className='navdoc';
+    var a=document.createElement('a'); a.className='navtop'; a.href='#sec-'+i;
+    a.textContent=(h1?h1.textContent:(sec.dataset.short||('Doc '+i)));
+    grp.appendChild(a);
+    var subs=document.createElement('div'); subs.className='subs';
+    [].slice.call(sec.querySelectorAll('h2')).forEach(function(h2,j){
+      h2.id='sec-'+i+'-'+j; h2.style.scrollMarginTop='12px';
+      var sa=document.createElement('a'); sa.href='#sec-'+i+'-'+j;
+      sa.textContent=h2.textContent;
+      subs.appendChild(sa);
+    });
+    grp.appendChild(subs); navlist.appendChild(grp);
+    sec.style.scrollMarginTop='12px';
+  });
+  var navdocs=[].slice.call(document.querySelectorAll('.navdoc'));
+
+  // ---- scroll spy + progress + back-to-top ----
+  var bar=document.getElementById('bar'), bt=document.getElementById('backtop');
+  function spy(){
+    var h=document.documentElement;
+    var max=h.scrollHeight-h.clientHeight;
+    bar.style.width=(max>0?(h.scrollTop/max*100):0)+'%';
+    bt.classList.toggle('show', h.scrollTop>600);
+    var ai=0;
+    secs.forEach(function(s,i){ if(s.getBoundingClientRect().top<=170) ai=i; });
+    navdocs.forEach(function(g,i){ g.classList.toggle('active', i===ai); });
+    var h2s=[].slice.call(secs[ai].querySelectorAll('h2'));
+    var hj=-1; h2s.forEach(function(x,j){ if(x.getBoundingClientRect().top<=170) hj=j; });
+    document.querySelectorAll('.subs a.on').forEach(function(a){a.classList.remove('on');});
+    var sub=navdocs[ai].querySelectorAll('.subs a');
+    if(hj>=0&&sub[hj]) sub[hj].classList.add('on');
+  }
+  bt.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});
+  window.addEventListener('scroll',spy,{passive:true});
+  window.addEventListener('resize',spy);
+  spy();
+})();
+</script>
+
+<style>#apex-home{position:fixed;left:18px;bottom:18px;z-index:40;display:inline-flex;align-items:center;gap:6px;
+  background:#084d2a;color:#dff3e6;font-size:13px;font-weight:600;padding:9px 14px;border-radius:999px;
+  text-decoration:none;box-shadow:0 6px 18px rgba(0,0,0,.22);font-family:"Segoe UI","PingFang TC",sans-serif}
+#apex-home:hover{background:#0b6b3a}
+@media(max-width:980px){#apex-home{left:12px;bottom:12px}}</style>
+<a id="apex-home" href="../">← 研究中心</a>
+
+</body>
+</html>

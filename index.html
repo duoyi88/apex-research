@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+
+<!-- APEX access gate (soft, client-side) -->
+<style>
+  html.apexlock body>*:not(#apex-gate){display:none!important}
+  html.apexlock{overflow:hidden}
+  #apex-gate{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#084d2a 0%,#0b6b3a 55%,#12894b 100%);
+    font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft JhengHei",sans-serif}
+  #apex-gate .gbox{width:min(92vw,360px);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);
+    border-radius:18px;padding:34px 30px 28px;box-shadow:0 24px 60px rgba(0,0,0,.32);backdrop-filter:blur(8px);
+    text-align:center;color:#eafaf0}
+  #apex-gate .gicon{width:54px;height:54px;border-radius:50%;margin:0 auto 14px;display:flex;align-items:center;
+    justify-content:center;font-size:26px;background:#e7b53c;color:#3a2c00;font-weight:800;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+  #apex-gate h2{margin:0 0 4px;font-size:21px;font-weight:800;letter-spacing:.5px;color:#fff}
+  #apex-gate p{margin:0 0 20px;font-size:13px;color:#bfe6ce}
+  #apex-gate input{width:100%;padding:13px 15px;border-radius:10px;border:1px solid rgba(255,255,255,.25);
+    background:rgba(0,0,0,.18);color:#fff;font-size:18px;text-align:center;letter-spacing:6px;outline:none;
+    transition:border-color .15s}
+  #apex-gate input:focus{border-color:#e7b53c}
+  #apex-gate button{width:100%;margin-top:12px;padding:12px;border:none;border-radius:10px;cursor:pointer;
+    background:#e7b53c;color:#3a2c00;font-size:15px;font-weight:800;letter-spacing:1px;transition:filter .15s}
+  #apex-gate button:hover{filter:brightness(1.06)}
+  #apex-gate .ge{display:none;margin-top:12px;font-size:12.5px;color:#ffd7d2}
+  #apex-gate.bad .gbox{animation:apexshake .42s}
+  @keyframes apexshake{10%,90%{transform:translateX(-2px)}30%,70%{transform:translateX(5px)}50%{transform:translateX(-7px)}}
+</style>
+<script>
+(function(){
+  var KEY='apex_gate_v1', HASH=193354864;
+  function hf(s){var x=5381;for(var i=0;i<s.length;i++){x=(((x*33)&0xffffffff)^s.charCodeAt(i))>>>0;}return x;}
+  function ok(){try{return sessionStorage.getItem(KEY)==='1';}catch(e){return false;}}
+  if(ok())return;
+  var H=document.documentElement; H.classList.add('apexlock');
+  function build(){
+    if(document.getElementById('apex-gate'))return;
+    var o=document.createElement('div'); o.id='apex-gate';
+    o.innerHTML='<div class="gbox"><div class="gicon">&#9899;</div>'+
+      '<h2>APEX 研究中心</h2><p>請輸入通行密碼以檢視內容</p>'+
+      '<input type="password" inputmode="numeric" autocomplete="off" aria-label="password" placeholder="•••">'+
+      '<button type="button">進入</button>'+
+      '<div class="ge">密碼錯誤，請再試一次</div></div>';
+    (document.body||H).appendChild(o);
+    var inp=o.querySelector('input'), btn=o.querySelector('button'), err=o.querySelector('.ge');
+    function submit(){
+      if(hf((inp.value||'').trim())===HASH){
+        try{sessionStorage.setItem(KEY,'1');}catch(e){}
+        o.parentNode&&o.parentNode.removeChild(o); H.classList.remove('apexlock');
+      }else{
+        o.classList.add('bad'); err.style.display='block'; inp.value=''; inp.focus();
+        setTimeout(function(){o.classList.remove('bad');},460);
+      }
+    }
+    btn.addEventListener('click',submit);
+    inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();submit();}});
+    setTimeout(function(){inp.focus();},30);
+  }
+  if(document.body){build();}
+  else{document.addEventListener('DOMContentLoaded',build);
+    // also try ASAP so the overlay paints before body content
+    var t=setInterval(function(){if(document.body){clearInterval(t);build();}},8);}
+})();
+</script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APEX 研究中心 · 撞球賽會整合研究</title>
+<style>
+  :root{
+    --felt:#0b6b3a; --felt-dark:#084d2a; --felt-light:#12894b;
+    --ink:#1a2230; --muted:#5b6776; --line:#e3e8ee; --bg:#f6f8fa;
+    --card:#fff; --accent:#e7b53c;
+    --radius:16px; --shadow:0 1px 3px rgba(16,32,55,.06),0 10px 30px rgba(16,32,55,.08);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft JhengHei",sans-serif;
+    color:var(--ink);background:var(--bg);line-height:1.7;-webkit-font-smoothing:antialiased}
+  a{text-decoration:none;color:inherit}
+
+  header.hero{background:linear-gradient(135deg,var(--felt-dark) 0%,var(--felt) 50%,var(--felt-light) 100%);
+    color:#fff;padding:74px 24px 92px;position:relative;overflow:hidden;text-align:center}
+  header.hero::after{content:"";position:absolute;right:-90px;top:-90px;width:340px;height:340px;
+    background:radial-gradient(circle,rgba(255,255,255,.15),transparent 70%);border-radius:50%}
+  header.hero::before{content:"";position:absolute;left:-70px;bottom:-120px;width:300px;height:300px;
+    background:radial-gradient(circle,rgba(0,0,0,.13),transparent 70%);border-radius:50%}
+  .hero .eyebrow{font-size:13px;letter-spacing:4px;color:#bdebcf;text-transform:uppercase;font-weight:700;position:relative;z-index:1}
+  .hero h1{margin:12px 0 14px;font-size:40px;font-weight:800;letter-spacing:1px;position:relative;z-index:1}
+  .hero p{margin:0 auto;max-width:680px;font-size:16px;color:#e8f7ee;position:relative;z-index:1}
+  .hero .pills{margin-top:26px;display:flex;flex-wrap:wrap;gap:9px;justify-content:center;position:relative;z-index:1}
+  .hero .pill{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.26);
+    padding:6px 15px;border-radius:999px;font-size:13px}
+
+  .wrap{max-width:1080px;margin:-56px auto 0;padding:0 24px 64px;position:relative;z-index:2}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:22px}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;
+    transition:transform .16s,box-shadow .16s}
+  a.card:hover{transform:translateY(-4px);box-shadow:0 6px 14px rgba(16,32,55,.10),0 22px 48px rgba(16,32,55,.16)}
+  .card .top{padding:24px 24px 18px;display:flex;flex-direction:column;flex:1}
+  .card .badge{align-self:flex-start;display:flex;align-items:center;justify-content:center;width:42px;height:42px;
+    border-radius:12px;color:#fff;font-size:20px;font-weight:800;margin-bottom:16px;
+    font-variant-numeric:tabular-nums}
+  .c1 .badge{background:#0b6b3a} .c2 .badge{background:#1f6fd0}
+  .c3 .badge{background:#e8801a} .c4 .badge{background:#8a93a0}
+  .card h3{margin:0 0 8px;font-size:20px;font-weight:800;color:var(--ink)}
+  .card .desc{margin:0 0 16px;font-size:13.8px;color:var(--muted);flex:1}
+  .card .tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px}
+  .card .tag{font-size:11.5px;font-weight:600;color:var(--felt-dark);background:#e7f5ec;
+    padding:3px 9px;border-radius:6px}
+  .c2 .tag{color:#1b4f86;background:#e6f0fb} .c3 .tag{color:#9a5b14;background:#fdf0df}
+  .card .foot{border-top:1px solid var(--line);padding:13px 24px;font-size:13.5px;font-weight:700;
+    color:var(--felt);display:flex;align-items:center;justify-content:space-between;background:#fafcfb}
+  .card .foot .go{transition:transform .16s}
+  a.card:hover .foot .go{transform:translateX(4px)}
+
+  .card.soon{opacity:.92}
+  .card.soon .foot{color:var(--muted)}
+  .card .wip{align-self:flex-start;font-size:11.5px;font-weight:700;color:#8a6d00;background:#fdf3d7;
+    border:1px solid #f0e0a8;padding:3px 10px;border-radius:999px;margin-bottom:12px}
+  .card.soon .tag{color:#5b6776;background:#eef1f4}
+
+  .meta{margin:40px auto 0;max-width:1080px;padding:0 24px}
+  .note{background:#fff;border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:12px;
+    padding:16px 20px;font-size:13.5px;color:var(--muted);box-shadow:var(--shadow)}
+  .note b{color:var(--ink)}
+  footer{text-align:center;color:var(--muted);font-size:12.5px;padding:40px 24px 30px}
+  footer .dot{color:var(--accent);margin:0 7px}
+
+  @media(max-width:560px){.hero h1{font-size:30px}.hero{padding:58px 20px 86px}}
+</style>
+</head>
+<body>
+  <header class="hero">
+    <div class="eyebrow">APEX 盃撞球公開賽</div>
+    <h1>APEX 研究中心</h1>
+    <p>圍繞「辦一個現代化撞球賽會」的四條研究主線——評分系統、店務 SaaS、賽制賽務、社群論壇——整合於此入口。</p>
+    <div class="pills">
+      <span class="pill">跨賽制統一評分</span>
+      <span class="pill">撞球店雲端 SaaS</span>
+      <span class="pill">三體系賽制重組</span>
+      <span class="pill">社群論壇（規劃中）</span>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="grid">
+
+      <a class="card c1" href="./research/">
+        <div class="top">
+          <div class="badge">1</div>
+          <h3>撞球跨賽制統一評分系統</h3>
+          <p class="desc">類 DUPR 的動態評分研究。解決撞球賽制不統一（8/9/10 號球、14-1、One Pocket、三顆星開倫…），一名選手跨賽制如何整合計算積分——以階層貝葉斯／部分匯聚推導可落地設計。</p>
+          <div class="tags">
+            <span class="tag">DUPR</span><span class="tag">Elo · Glicko-2</span>
+            <span class="tag">FargoRate</span><span class="tag">部分匯聚</span>
+          </div>
+        </div>
+        <div class="foot"><span>7 篇研究</span><span class="go">進入 →</span></div>
+      </a>
+
+      <a class="card c2" href="./saas-research/">
+        <div class="top">
+          <div class="badge">2</div>
+          <h3>撞球店雲端 SaaS 系統</h3>
+          <p class="desc">撞球店務經營管理系統研究（POS／計時／IoT 燈控）。核心結論：東南亞自助化落後中國一個世代＝藍海；定位＝真雲端 SaaS ＋ 在地化合規 ＋ 中國級自助／燈控標配。</p>
+          <div class="tags">
+            <span class="tag">POS · 計時</span><span class="tag">IoT 燈控</span>
+            <span class="tag">市場 · 競品</span><span class="tag">MVP 架構</span>
+          </div>
+        </div>
+        <div class="foot"><span>市場 · 競品 · MVP</span><span class="go">進入 →</span></div>
+      </a>
+
+      <a class="card c3" href="./tournament-research/">
+        <div class="top">
+          <div class="badge">3</div>
+          <h3>撞球賽制與賽務研究</h3>
+          <p class="desc">全球撞球「辦賽」知識盤點，依美式／英式／中式三大體系分類——規則、賽程、裁判、賽務。結論：APEX 不複製單一體系，而做三者重組＋自有評分引擎驅動的跨賽制電路。</p>
+          <div class="tags">
+            <span class="tag">美式 race-to</span><span class="tag">英式裁判</span>
+            <span class="tag">中式 Heyball</span><span class="tag">賽制進化</span>
+          </div>
+        </div>
+        <div class="foot"><span>6 篇研究</span><span class="go">進入 →</span></div>
+      </a>
+
+      <div class="card c4 soon">
+        <div class="top">
+          <div class="badge">4</div>
+          <span class="wip">● 規劃中</span>
+          <h3>撞球社群論壇研究</h3>
+          <p class="desc">撞球線上社群生態研究（PTT、Reddit r/billiards、貼吧、Bilibili 等資料蒐集中）。目標：理解玩家社群結構與內容需求，作為 APEX 社群平台的設計基礎。完成後將併入本入口。</p>
+          <div class="tags">
+            <span class="tag">PTT</span><span class="tag">Reddit</span>
+            <span class="tag">貼吧 · 站台</span><span class="tag">社群分析</span>
+          </div>
+        </div>
+        <div class="foot"><span>資料蒐集與分析中</span><span class="go">敬請期待</span></div>
+      </div>
+
+    </div>
+
+    <div class="meta">
+      <div class="note">
+        <b>四線交會</b>：評分系統產生種子與讓分 → 賽制消費這些資料 → SaaS 是執行賽務的軟體載體 → 社群論壇承載玩家黏著與內容傳播。四者共同構成 APEX 盃的完整賽會邏輯。
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    APEX 盃撞球公開賽 · 研究中心<span class="dot">●</span>內部研究資料，請勿外傳
+  </footer>
+</body>
+</html>
