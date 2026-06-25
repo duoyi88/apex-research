@@ -355,13 +355,19 @@ WHR Coulom 2008、IRT/Multidimensional IRT、James-Stein 收縮、empirical Baye
 |------|------|------|
 | `ptt-billiard-analysis-2025-2026.md` | 台灣 PTT | 撞球版近一年爬梳（181 篇）|
 | `ptt-billiard-analysis-2021-2026.md` | 台灣 PTT | 撞球版五年爬梳（1,194 篇）|
-| `reddit-billiard-analysis.md` | 英語 Reddit | **真實閱讀版**：全量 9,578 篇（近一年含內文）+ 逐篇精讀內文與留言 |
-| `china-billiard-community-analysis.md` | 中國 B站/貼吧 | **真實閱讀版**：貼吧 3 吧 24 帖完整討論串 + Bilibili 11 部評論彈幕 |
-| `data/findings_reddit.md` `data/findings_tieba.md` `data/findings_bili.md` | — | 真實閱讀逐條筆記，每條附 post ID/tid/bvid 可反查 |
+| `reddit-billiard-analysis.md` | 英語 Reddit | **真實閱讀版（近三年）**：三年窗 16,607 篇趨勢 + 近一年 9,578 篇全文 + 逐篇精讀內文與留言 |
+| `china-billiard-community-analysis.md` | 中國 B站/貼吧 | **真實閱讀版**：貼吧 4 吧（台球/斯诺克/中式八球/丁俊晖）完整討論串 + Bilibili 11 部評論彈幕 |
+| `azbilliards-snooker-analysis.md` | AzBilliards + r/snooker + YouTube | **真實閱讀版**：AZB 6 板塊（開倫/直撞/球館/英式/斯诺克）+ r/snooker 近三年 6,510 篇 + YouTube 雙受眾。AZB 是與 APEX 評分最對口的社群（TDF/Fargo/BU測驗）|
+| `data/findings_{reddit,tieba,bili,azb,snooker,youtube}.md` | — | 真實閱讀逐條筆記，每條附 post ID/tid/bvid 可反查 |
 
-**真實閱讀方法**：Reddit 用 PullPush 抓近一年 9,578 篇全文（含 selftext + 留言）做全量統計，再逐篇精讀各類別內文與留言串；貼吧用瀏覽器讀每帖完整討論串；Bilibili 影片無法觀看，改讀觀眾評論+彈幕。每條結論附可反查 ID（非標題推論）。
+**真實閱讀方法**：Reddit 用 PullPush 抓**近三年**全文（r/billiards 16,607 篇、r/snooker 6,510 篇，2023-06-25～2025-05-19；**PullPush 存檔止於 2025-05-19，最新約 13 個月為斷層**）做全量趨勢統計，再逐篇精讀內文與留言串；AZB 用 curl 讀 6 板塊；貼吧用瀏覽器讀完整討論串；Bilibili/YouTube 影片無法觀看，改讀觀眾評論+彈幕；Discord 為隱私牆未取得。每條結論附可反查 ID（非標題推論）。
 
-**三大社群一句話結論**：PTT＝「觀眾型」（只追賽事）；Reddit＝「玩家型」（求助/評分/裝備，賽事是配角，APA讓分制 sandbagging 弊端是 APEX 反面教材，開倫等所有球種都活著）；中國＝「分裂型」（B站泛娛樂玩梗 vs 貼吧斯诺克吧專家多維辯論，兩群不重疊；中式八球聲量倒掛、規則有版本差異與和局）。三者皆無人掌握「玩家評分/戰績管理」——正是 APEX 的切入點。
+**六大社群一句話結論**：
+- **觀眾型**（要排名榜+選手八卦）：台灣 PTT（只追賽事）、r/snooker（懂球辯論、世錦賽討論串949留言）、中國貼吧斯诺克吧（火希塞多維辯論）+ 丁俊晖吧（國族應援）。
+- **玩家型**（要個人客觀評分）：r/billiards（求助/裝備，APA讓分制 sandbagging 是 APEX 反面教材）、**AzBilliards（最對口：已有 TDF 球桌難度校正、Fargo、BU 標準化測驗、開倫專板、14.1 追蹤App）**。
+- **泛流量型**：中國 B站（娛樂玩梗、明星名字當鉤子）。
+
+「觀眾型 vs 玩家型」是評分需求的分水嶺，但後端引擎可共用。**AzBilliards 證明 APEX 核心設計（跨難度校正、個人評分、賽制分家族）有現成共鳴與用戶**；開倫在英語圈活著且組織化（USBA），與華語圈「開倫隱形」相反。獎金東移（獨牙九球/Duya $1.5M）是跨社群共識。
 
 ---
 
