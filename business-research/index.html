@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+
+<!-- APEX access gate (soft, client-side) -->
+<style>
+  html.apexlock body>*:not(#apex-gate){display:none!important}
+  html.apexlock{overflow:hidden}
+  #apex-gate{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#084d2a 0%,#0b6b3a 55%,#12894b 100%);
+    font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft JhengHei",sans-serif}
+  #apex-gate .gbox{width:min(92vw,360px);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);
+    border-radius:18px;padding:34px 30px 28px;box-shadow:0 24px 60px rgba(0,0,0,.32);backdrop-filter:blur(8px);
+    text-align:center;color:#eafaf0}
+  #apex-gate .gicon{width:54px;height:54px;border-radius:50%;margin:0 auto 14px;display:flex;align-items:center;
+    justify-content:center;font-size:26px;background:#e7b53c;color:#3a2c00;font-weight:800;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+  #apex-gate h2{margin:0 0 4px;font-size:21px;font-weight:800;letter-spacing:.5px;color:#fff}
+  #apex-gate p{margin:0 0 20px;font-size:13px;color:#bfe6ce}
+  #apex-gate input{width:100%;padding:13px 15px;border-radius:10px;border:1px solid rgba(255,255,255,.25);
+    background:rgba(0,0,0,.18);color:#fff;font-size:18px;text-align:center;letter-spacing:6px;outline:none;
+    transition:border-color .15s}
+  #apex-gate input:focus{border-color:#e7b53c}
+  #apex-gate button{width:100%;margin-top:12px;padding:12px;border:none;border-radius:10px;cursor:pointer;
+    background:#e7b53c;color:#3a2c00;font-size:15px;font-weight:800;letter-spacing:1px;transition:filter .15s}
+  #apex-gate button:hover{filter:brightness(1.06)}
+  #apex-gate .ge{display:none;margin-top:12px;font-size:12.5px;color:#ffd7d2}
+  #apex-gate.bad .gbox{animation:apexshake .42s}
+  @keyframes apexshake{10%,90%{transform:translateX(-2px)}30%,70%{transform:translateX(5px)}50%{transform:translateX(-7px)}}
+</style>
+<script>
+(function(){
+  var KEY='apex_gate_v1', HASH=193354864;
+  function hf(s){var x=5381;for(var i=0;i<s.length;i++){x=(((x*33)&0xffffffff)^s.charCodeAt(i))>>>0;}return x;}
+  function ok(){try{return sessionStorage.getItem(KEY)==='1';}catch(e){return false;}}
+  if(ok())return;
+  var H=document.documentElement; H.classList.add('apexlock');
+  function build(){
+    if(document.getElementById('apex-gate'))return;
+    var o=document.createElement('div'); o.id='apex-gate';
+    o.innerHTML='<div class="gbox"><div class="gicon">&#9899;</div>'+
+      '<h2>APEX 研究中心</h2><p>請輸入通行密碼以檢視內容</p>'+
+      '<input type="password" inputmode="numeric" autocomplete="off" aria-label="password" placeholder="•••">'+
+      '<button type="button">進入</button>'+
+      '<div class="ge">密碼錯誤，請再試一次</div></div>';
+    (document.body||H).appendChild(o);
+    var inp=o.querySelector('input'), btn=o.querySelector('button'), err=o.querySelector('.ge');
+    function submit(){
+      if(hf((inp.value||'').trim())===HASH){
+        try{sessionStorage.setItem(KEY,'1');}catch(e){}
+        o.parentNode&&o.parentNode.removeChild(o); H.classList.remove('apexlock');
+      }else{
+        o.classList.add('bad'); err.style.display='block'; inp.value=''; inp.focus();
+        setTimeout(function(){o.classList.remove('bad');},460);
+      }
+    }
+    btn.addEventListener('click',submit);
+    inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();submit();}});
+    setTimeout(function(){inp.focus();},30);
+  }
+  if(document.body){build();}
+  else{document.addEventListener('DOMContentLoaded',build);
+    // also try ASAP so the overlay paints before body content
+    var t=setInterval(function(){if(document.body){clearInterval(t);build();}},8);}
+})();
+</script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>撞球商業與投資研究 · APEX</title>
+<style>
+  :root{
+    --felt:#0b6b3a; --felt-dark:#084d2a; --felt-light:#12894b;
+    --ink:#1a2230; --muted:#5b6776; --line:#e3e8ee; --bg:#f6f8fa;
+    --card:#ffffff; --accent:#e7b53c; --chalk:#2b6cb0;
+    --radius:14px; --shadow:0 1px 3px rgba(16,32,55,.06),0 8px 24px rgba(16,32,55,.06);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft JhengHei",sans-serif;
+    color:var(--ink);background:var(--bg);line-height:1.78;-webkit-font-smoothing:antialiased}
+  a{color:var(--chalk);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  #bar{position:fixed;top:0;left:0;height:3px;width:0;z-index:50;
+    background:linear-gradient(90deg,var(--accent),var(--felt-light))}
+
+  .wrap{display:grid;grid-template-columns:282px 1fr;max-width:1320px;margin:0 auto}
+  nav.side{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;
+    background:var(--felt-dark);color:#dff3e6;padding:24px 16px 40px}
+  nav.side .brand{font-weight:800;font-size:20px;color:#fff;letter-spacing:.5px}
+  nav.side .brand span{color:var(--accent)}
+  nav.side .sub{font-size:12px;color:#9fd9b8;margin:2px 0 14px}
+  nav.side .home{display:inline-flex;align-items:center;gap:6px;color:#bfe6ce;font-size:12.5px;
+    background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);padding:6px 12px;
+    border-radius:8px;margin-bottom:16px}
+  nav.side .home:hover{background:rgba(255,255,255,.14);text-decoration:none}
+  .navlist{counter-reset:nd -1}
+  .navdoc{margin:2px 0}
+  .navtop{display:flex;align-items:center;gap:10px;color:#eafaf0;padding:8px 10px;border-radius:9px;
+    font-size:14.5px;font-weight:600}
+  .navtop::before{counter-increment:nd;content:counter(nd);flex:none;width:22px;height:22px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#1a2230;
+    background:#fff;box-shadow:inset 0 -2px 4px rgba(0,0,0,.25)}
+  .navdoc:nth-child(2) .navtop::before{background:#f5c518}
+  .navdoc:nth-child(3) .navtop::before{background:#1f6fd0;color:#fff}
+  .navdoc:nth-child(4) .navtop::before{background:#d6332e;color:#fff}
+  .navdoc:nth-child(5) .navtop::before{background:#6b3fa0;color:#fff}
+  .navdoc:nth-child(6) .navtop::before{background:#e8801a;color:#fff}
+  .navdoc:nth-child(7) .navtop::before{background:#0a8a6a;color:#fff}
+  .navtop:hover{background:rgba(255,255,255,.08);text-decoration:none}
+  .navdoc.active>.navtop{background:rgba(255,255,255,.16);color:#fff}
+  .subs{display:none;margin:2px 0 8px 32px;border-left:1px solid rgba(255,255,255,.15);padding-left:8px}
+  .navdoc.active .subs{display:block}
+  .subs a{display:block;color:#bfe6ce;font-size:13px;padding:4px 9px;border-radius:7px;margin:1px 0}
+  .subs a:hover{background:rgba(255,255,255,.07);text-decoration:none}
+  .subs a.on{background:var(--accent);color:#3a2c00;font-weight:700}
+
+  main{padding:0 0 90px;min-width:0}
+
+  header.hero{background:linear-gradient(135deg,var(--felt) 0%,var(--felt-light) 100%);
+    color:#fff;padding:56px 52px 48px;position:relative;overflow:hidden}
+  header.hero::after{content:"";position:absolute;right:-70px;top:-70px;width:300px;height:300px;
+    background:radial-gradient(circle,rgba(255,255,255,.16),transparent 70%);border-radius:50%}
+  header.hero::before{content:"";position:absolute;left:-40px;bottom:-90px;width:240px;height:240px;
+    background:radial-gradient(circle,rgba(0,0,0,.12),transparent 70%);border-radius:50%}
+  header.hero .eyebrow{font-size:13px;letter-spacing:3px;color:#bdebcf;text-transform:uppercase;font-weight:700}
+  header.hero h1{margin:8px 0 12px;font-size:34px;font-weight:800;letter-spacing:.5px;position:relative;z-index:1}
+  header.hero p{margin:0;max-width:820px;color:#e8f7ee;font-size:16px;position:relative;z-index:1}
+  .pills{margin-top:24px;display:flex;flex-wrap:wrap;gap:9px;position:relative;z-index:1}
+  .pill{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);
+    padding:6px 14px;border-radius:999px;font-size:13px;backdrop-filter:blur(4px)}
+
+  section.doc{padding:30px 52px;border-bottom:8px solid #eef1f4}
+  .rendered{max-width:880px}
+  .rendered h1{font-size:27px;color:var(--felt-dark);margin:8px 0 4px;padding-bottom:12px;
+    border-bottom:3px solid var(--felt);font-weight:800;line-height:1.35}
+  .rendered h2{font-size:21px;margin:36px 0 12px;padding-left:13px;border-left:5px solid var(--felt-light);
+    color:var(--ink);font-weight:700;line-height:1.4}
+  .rendered h3{font-size:16.5px;margin:24px 0 8px;color:var(--felt-dark);font-weight:700}
+  .rendered h4{font-size:15px;margin:16px 0 6px;color:var(--ink)}
+  .rendered p{margin:11px 0}
+  .rendered strong{color:var(--felt-dark);font-weight:700}
+  .rendered ul,.rendered ol{margin:11px 0;padding-left:24px}
+  .rendered li{margin:5px 0}
+  .rendered hr{border:none;border-top:1px dashed var(--line);margin:26px 0}
+  .rendered code{background:#eef3f0;color:#0a5a32;padding:1.5px 6px;border-radius:5px;
+    font-family:"SF Mono",Consolas,Menlo,monospace;font-size:.88em}
+
+  .rendered blockquote{margin:18px 0;background:linear-gradient(180deg,#f1f9f4,#eaf6ef);
+    border:1px solid #cfe9da;border-left:5px solid var(--felt);border-radius:12px;
+    padding:14px 20px;color:#143d29;box-shadow:var(--shadow)}
+  .rendered blockquote p{margin:6px 0}
+  .rendered blockquote strong{color:var(--felt)}
+
+  .tbl{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);background:#fff;margin:16px 0}
+  .rendered table{border-collapse:collapse;width:100%;font-size:13.6px;min-width:440px}
+  .rendered th,.rendered td{padding:10px 13px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  .rendered thead th{background:var(--felt-dark);color:#fff;font-weight:600;white-space:nowrap;position:sticky;top:0}
+  .rendered tbody tr:nth-child(even){background:#fafcfb}
+  .rendered tbody tr:hover{background:#f0f7f3}
+  .rendered td:first-child,.rendered th:first-child{white-space:nowrap}
+  .rendered table :is(td,th):nth-child(n+2){text-align:left}
+
+  .rendered pre{background:#0d1b14;color:#cfe9d8;padding:20px 22px;border-radius:var(--radius);
+    overflow-x:auto;box-shadow:var(--shadow);margin:18px 0}
+  .rendered pre code{background:none;color:#d3ecdd;padding:0;font-size:12.8px;line-height:1.55;
+    font-family:"SF Mono",Consolas,Menlo,monospace;white-space:pre}
+
+  .backtop{position:fixed;right:22px;bottom:22px;width:44px;height:44px;border-radius:50%;
+    background:var(--felt);color:#fff;display:none;align-items:center;justify-content:center;
+    box-shadow:var(--shadow);cursor:pointer;font-size:18px;z-index:40;border:none}
+  .backtop.show{display:flex}
+
+  @media(max-width:980px){
+    .wrap{grid-template-columns:1fr}
+    nav.side{position:static;height:auto;overflow:visible}
+    .navlist{display:flex;flex-wrap:wrap;gap:4px}
+    .navdoc{flex:1 1 auto}
+    .subs{display:none!important}
+    header.hero{padding:40px 22px}
+    section.doc{padding:26px 22px}
+  }
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div class="wrap">
+  <nav class="side">
+    <div class="brand">APEX<span>·</span>商業</div>
+    <div class="sub">商業與投資研究</div>
+    <a class="home" href="../">← 返回研究中心</a>
+    <div class="navlist" id="navlist"></div>
+  </nav>
+  <main>
+    <header class="hero">
+      <div class="eyebrow">APEX BUSINESS & INVESTMENT</div>
+      <h1>撞球商業與投資研究</h1>
+      <p>把「賽事資料飛輪」翻譯成投資人與贊助商看得懂的生意——市場規模、商業模式、對標公司、財務模型與護城河。核心前提：<strong>APEX 的第一付費者是贊助商與投資人</strong>，玩家與球館是飛輪與資產，不是第一桶金。</p>
+      <div class="pills">
+        <span class="pill">第一付費者：贊助商＋投資人</span>
+        <span class="pill">TAM · SAM · SOM</span>
+        <span class="pill">對標 DUPR · Matchroom</span>
+        <span class="pill">資料飛輪護城河</span>
+        <span class="pill">里程碑與止損判準</span>
+        <span class="pill">6 篇研究</span>
+      </div>
+    </header>
+<section class="doc" data-short="總覽"><script type="text/markdown" id="md-0">
+# APEX 商業與投資研究 · 總覽
+
+> 本研究線回答一個問題：**APEX 如果要成為一門可投資、可被贊助的生意，它的市場、商業模式、對標、財務與護城河長什麼樣？**
+>
+> 與其他研究線的分工：
+> - `/research/`：評分系統（產品的技術底層）
+> - `/tournament-research/`：賽制賽務（產品的賽事引擎）
+> - `/community-research/`：社群（需求來源與傳播）
+> - `/saas-research/`：球館 SaaS（資料節點與後期變現）
+> - **本線 `/business-research/`：把上述四條翻譯成「投資人與贊助商看得懂的生意」。**
+
+---
+
+## 0. 為什麼現在要補這條線（第一付費者決定一切）
+
+先前的策略收斂已確立主線是**賽事資料飛輪**：辦賽 → 收賽果 → 產生玩家身份與評分 → 回到球館與社群 → 再擴成 SaaS。
+
+但飛輪本身不會自動產生現金。真正決定產品形態的，是**誰先付錢**。
+
+> **本專案的明確前提：APEX 的第一付費者是「贊助商」與「投資人」，不是玩家、也不是球館。**
+
+這個前提把整個商業設計的順序倒過來：
+
+| 若第一付費者是… | 產品第一要務 | 風險 |
+|---|---|---|
+| 玩家（訂閱/報名費） | 做玩家願意掏錢的 App | 撞球玩家付費意願低、客單價低、規模慢 |
+| 球館（SaaS 月費） | 做完整店務系統 | 重運營、售後吃團隊、與中國廠商紅海競爭 |
+| **贊助商（冠名/曝光/數據）** | **做「可被贊助的賽事 IP＋可量化的受眾與數據資產」** | 需先證明觸及、內容與數據對品牌有價值 |
+| **投資人（股權）** | **做「可規模化、有護城河、有里程碑的成長故事」** | 需先證明飛輪會轉、單位經濟成立 |
+
+**結論：APEX 第一階段不是在賣軟體給玩家或球館，而是在「生產兩種可售資產」——**
+
+1. **給贊助商**：一個有舞台、有明星選手、有線上線下觸及、有玩家數據的**撞球賽事 IP**。
+2. **給投資人**：一個有獨佔資料、有網路效應、有清楚里程碑的**撞球玩家身份與賽事平台**。
+
+玩家與球館不是不重要——他們是**生產這兩種資產的原料與飛輪**，但不是第一個現金來源。
+
+---
+
+## 1. 一頁投資論點（One-pager）
+
+> **APEX 是「從台灣賽事現場長出來的撞球玩家身份與賽事平台」。**
+> 我們用自辦的認證賽事持續產生乾淨賽果，沉澱成跨賽制的玩家評分與履歷（Player Passport），
+> 形成競爭對手難以複製的撞球賽事資料庫。短期靠**賽事冠名與品牌贊助**變現，
+> 中期靠**認證球館網路與資料服務**擴張，長期成為華語與東南亞撞球的**評分標準與賽事作業系統**。
+
+三個可投資的理由：
+
+1. **賽道被低估**：撞球線下參與規模大、明星與獎金正在東移（中式八球巨額獎金、九球高額賽），但**線上身份/評分/數據基礎設施幾乎空白**（見 `/community-research/`）。
+2. **資料飛輪有護城河**：賽果資料越多 → 評分越準 → 越多賽事採用 → 又產生更多資料。後進者沒有歷史資料無法追上（對標 FargoRate、DUPR）。
+3. **變現路徑清楚且可分階段**：贊助（先）→ 認證球館（中）→ 資料/媒體/電商（後），每階段都有對標公司驗證可行性。
+
+---
+
+## 2. 本線文件索引
+
+| 編號 | 文件 | 回答的問題 |
+|------|------|-----------|
+| 01 | 市場規模與 TAM/SAM/SOM | 這個市場到底多大？台灣可服務的部分多大？ |
+| 02 | 商業模式與營收結構 | APEX 怎麼賺錢？為什麼贊助/投資人先付錢？ |
+| 03 | 對標公司與競品地圖 | 誰證明了這條路可行？我們和誰比？ |
+| 04 | 財務模型與里程碑 | 數字長怎樣？成功/失敗的判準是什麼？ |
+| 05 | 護城河、風險與募資敘事 | 為什麼別人追不上？最大風險與如何說故事？ |
+
+---
+
+## 3. 全線通用的誠實聲明（沿用 APEX 研究紀律）
+
+- 所有 **市場規模、轉換率、客單價、贊助金額、財務數字** 標 🔧，均為**初始估計或情境假設**，須以實際訪談、報價、試辦數據校準。
+- 所有「藍海／空白／第一」類說法一律降語氣為「**公開資料未見／少見／值得驗證的假設**」。
+- 對標公司的**估值、募資、營收**數字附來源；無一手來源者標 🔧 並註明為產業敘事。
+- 本線是**商業推演**，不是已完成的盡職調查；目的是讓 APEX 團隊與潛在出資方在同一張地圖上對話。
+</script><div class="rendered" id="doc-0"></div></section>
+<section class="doc" data-short="市場規模 TAM/SAM/SOM"><script type="text/markdown" id="md-1">
+# 01 · 市場規模與 TAM / SAM / SOM
+
+> 目標：用**由下而上（bottom-up）**的方法，把「撞球市場很大」這句空話，拆成投資人能檢驗的數字。
+> 所有數字標 🔧 為初始估計，須以協會資料、球館普查、訪談校準。
+
+---
+
+## 0. 為什麼要做 TAM/SAM/SOM
+
+投資人不接受「撞球人口很多所以市場很大」。他們要看三層：
+
+- **TAM（Total Addressable Market）**：如果 APEX 服務全部相關人口/場館，理論天花板。
+- **SAM（Serviceable Available Market）**：APEX 商業模式與地理可實際觸及的部分。
+- **SOM（Serviceable Obtainable Market）**：未來 2–3 年實際拿得到的部分。
+
+對 APEX 這種「第一付費者是贊助商與投資人」的公司，市場規模有**兩種**要分開算：
+
+1. **受眾/資料市場**（決定贊助價值）：有多少玩家、觀眾、賽事、可沉澱多少資料。
+2. **收入市場**（決定財務天花板）：贊助、球館訂閱、資料/媒體、電商的可收金額。
+
+---
+
+## 1. 撞球參與的金字塔（受眾市場結構）
+
+```
+            職業/半職業選手        ← 數百人（台灣），內容與明星來源
+          ─────────────────
+         競技型業餘（常打比賽）     ← 數千～數萬，APEX 評分核心用戶
+       ───────────────────────
+      高頻玩家（每週到球館）        ← 數萬～數十萬，球館客群、潛在參賽
+    ─────────────────────────────
+   泛玩家 + 觀眾（偶爾打/只看球）   ← 數十萬～百萬級，贊助觸及面
+```
+
+> 🔧 **關鍵 insight**：贊助商買的是**整個金字塔的觸及與故事**（明星在頂、群眾在底）；
+> 而評分/資料產品的**核心付費飛輪**集中在「競技型業餘 + 高頻玩家」這兩層。
+> APEX 必須同時服務這兩種寬度，才能對贊助商有價值、又能讓飛輪轉動。
+
+---
+
+## 2. 台灣市場 bottom-up 估算（SAM 起點）🔧
+
+> 以下為**推估框架與示意數字**，每一格都必須用真實來源替換。標 🔧。
+
+### 2.1 場館與檯數
+
+| 項目 | 估計 🔧 | 取得方式（待辦） |
+|------|--------|----------------|
+| 台灣撞球館家數 | 數百～約一千家 | 商業登記、地圖 POI 普查、撞協名單 |
+| 平均每館檯數 | 8–20 檯 | 實地/電話抽樣 |
+| 全台球檯總數 | 萬級 | 上兩項相乘 |
+| 其中「常辦/可辦比賽」的館 | 少數比例 | 訪談、賽事公告反查 |
+
+### 2.2 玩家與參賽者
+
+| 項目 | 估計 🔧 | 取得方式（待辦） |
+|------|--------|----------------|
+| 經常打球人口 | 數十萬級 | 運動署運動現況調查、球館客流推估 |
+| 競技型/會打比賽 | 數千～數萬 | 各地賽事報名規模加總 |
+| 每年舉辦的大小賽事場次 | 數百～上千場 | 賽事平台、FB 社團、撞協公告盤點 |
+| 單場平均參賽人數 | 16–128 人 | 賽事公告抽樣 |
+
+> 這張表的每一格都是**可以靠一週的桌面研究 + 十通電話**收斂的。
+> 在拿到真實數字前，任何「市場 X 億」的宣稱都不應寫進對外簡報。
+
+---
+
+## 3. 收入市場：四個收入池（SAM）
+
+APEX 的可收金額來自四個池子，**按啟動順序**排列：
+
+| 收入池 | 付費者 | 規模驅動因子 | 啟動階段 |
+|--------|--------|------------|---------|
+| **A. 賽事贊助/冠名** | 品牌、器材商、地方政府、博彩/酒水（合規前提下） | 賽事數 × 觸及 × 單場贊助價 | P0–P1（**第一桶金**） |
+| **B. 認證球館訂閱** | 球館 | 認證球館數 × 月費 | P3 |
+| **C. 資料/媒體/積分服務** | 品牌、媒體、協會、博彩數據方 | 資料覆蓋 × API/授權價 | P4+ |
+| **D. 玩家增值/電商** | 玩家 | 活躍玩家 × ARPU | P4+（最後，非第一） |
+
+> **投資人視角**：A 是「現在能簽約的現金」，B/C/D 是「飛輪轉起來後的擴張曲線」。
+> 估值故事 = 用 A 證明能活、用 B/C/D 證明能長大。
+
+### 3.1 贊助收入池的粗估框架 🔧
+
+```
+年贊助收入 ≈ 年賽事場次 × 每場可售贊助位 × 平均贊助單價 × 簽約率
+            + 年度冠名/系列贊助（較大額、較少數）
+```
+
+- 每一個變數都在 `/sponsorship-research/` 細拆。
+- 重點：**先用少數旗艦賽事拿到可展示的冠名案例**，再複製到系列賽。
+
+---
+
+## 4. 區域擴張：台灣 → 大中華 / 東南亞（TAM）
+
+| 圈層 | 內容 | 對 TAM 的意義 | 風險 |
+|------|------|--------------|------|
+| **核心：台灣** | 9 號球競技池最強、可親自辦賽、資料最乾淨 | SAM 起點、樣板 | 市場小，天花板有限 |
+| **第二圈：東南亞** | 越南（撞球極盛）、菲律賓（九球強國）、馬來/泰 | 放大受眾與球館市場 | 在地化、落地團隊 |
+| **第三圈：大中華/中式八球** | 線下規模最大、獎金最高，但平台封閉、競爭快 | 最大 TAM，但最難 | 平台封閉、抄襲快、規則版本亂（見社群研究） |
+
+> 🔧 **策略排序**：先把台灣做成可信樣板與資料/評分標準，再以「中立第三方評分」的身分進東南亞，
+> 中式八球大市場**列為長期 TAM 願景而非近期 SOM**——這與先前「不先打中國」的判斷一致。
+
+---
+
+## 5. SOM：未來 2–3 年實際拿得到的
+
+> SOM 不是市佔幻想，而是「團隊規模 × 可辦賽數 × 可簽贊助數」反推的**保守可達量**。
+
+| 年度 | 可辦認證賽 🔧 | 可簽贊助 🔧 | 累積 Player Passport 🔧 | 認證球館 🔧 |
+|------|------------|-----------|------------------------|-----------|
+| Y1 | 少數旗艦 + 數場系列 | 1–2 個冠名/系列贊助 | 數百～數千 | 種子 1–3 家 |
+| Y2 | 系列化、月度節奏 | 數個品牌、首個年度冠名 | 數千～萬級 | 個位數～十餘家 |
+| Y3 | 跨區域、賽季制 | 年度冠名 + 多品牌 + 首個資料客戶 | 萬級 | 數十家 |
+
+> 這張表是 `04-財務模型與里程碑.md` 的輸入。數字全為 🔧 情境假設，
+> 真實 SOM 取決於：能否拿到第一個冠名贊助、能否讓玩家在意自己的 Passport、團隊執行帶寬。
+
+---
+
+## 6. 本篇結論
+
+1. 「撞球市場很大」必須拆成**受眾市場（決定贊助價值）**與**收入市場（決定財務）**兩套數字。
+2. 台灣 SAM 可在短期內用桌面研究 + 電話訪談收斂——**在此之前不要對外宣稱市場金額**。
+3. 收入按 **贊助(A) → 球館(B) → 資料/媒體(C) → 玩家(D)** 順序啟動，與「第一付費者＝贊助商/投資人」一致。
+4. 區域擴張採 **台灣樣板 → 東南亞 → 中式八球大市場**，把最大 TAM 放在長期願景。
+5. SOM 由團隊帶寬反推，不做市佔幻想。
+
+> 下一篇 `02` 把「APEX 怎麼賺錢、為什麼贊助/投資人先付」講清楚。
+</script><div class="rendered" id="doc-1"></div></section>
+<section class="doc" data-short="商業模式與營收"><script type="text/markdown" id="md-2">
+# 02 · 商業模式與營收結構
+
+> 目標：說清楚 APEX 怎麼把「賽事資料飛輪」變成現金流，為什麼**贊助商與投資人是第一付費者**，
+> 以及各收入線如何隨飛輪分階段開啟。數字標 🔧。
+
+---
+
+## 0. 商業模式一句話
+
+> **APEX 自辦/認證撞球賽事，產生乾淨賽果與玩家身份資料（Player Passport + 評分），
+> 短期把「賽事 IP 的曝光與數據」賣給贊助商、把「成長故事」賣給投資人，
+> 中長期把「認證球館工具」與「撞球資料/評分服務」變成可重複收入。**
+
+---
+
+## 1. 為什麼第一付費者是贊助商與投資人
+
+### 1.1 玩家先付的問題
+
+- 撞球玩家**付費意願與客單價偏低**，且社群研究顯示玩家要的是「免費的身份/評分」而非「再付一個 App 費」。
+- 靠玩家訂閱啟動 = 慢、薄、且需要先有大量用戶——雞生蛋。
+
+### 1.2 球館先付的問題
+
+- 完整 SaaS 是**重運營產品**，售後支援會吃死早期團隊。
+- 中國廠商已把店務 SaaS 打成紅海（見 `/saas-research/`），正面切入不利。
+
+### 1.3 贊助商 + 投資人先付的邏輯
+
+- **贊助商**買的是**注意力與數據**，不是軟體。只要 APEX 能辦出**有舞台、有明星、有線上線下觸及、有玩家資料**的賽事，就有可售的贊助資產——而這正是飛輪本來就會產生的副產品。
+- **投資人**買的是**未來的平台價值**。資料飛輪 + 評分護城河是典型「早期燒錢、後期壟斷標準」的故事，適合股權融資先行。
+- 兩者都**不需要 APEX 先有完整產品**，只需要**可信的賽事 + 清楚的飛輪 + 早期數據**。
+
+> **核心**：贊助與投資讓 APEX 有錢把飛輪轉起來；飛輪轉起來後再開啟玩家與球館的低頻、長尾收入。順序不能反。
+
+---
+
+## 2. 收入線全景
+
+| 線 | 名稱 | 付費者 | 類型 | 啟動 | 毛利特性 |
+|----|------|--------|------|------|---------|
+| **R1** | 賽事冠名/系列贊助 | 品牌、器材商、地方政府 | 專案/年約 | P0–P1 | 高毛利，但需業務與履約 |
+| **R2** | 單場/分項贊助與曝光位 | 中小品牌、在地商家 | 專案 | P1 | 高毛利、可標準化套餐 |
+| **R3** | 報名費/賽事抽成 | 玩家/球館 | 交易 | P0 | 覆蓋辦賽成本為主，非利潤核心 |
+| **R4** | 認證球館訂閱 | 球館 | 訂閱（SaaS） | P3 | 高毛利、可複利、需售後 |
+| **R5** | 資料/評分/API 授權 | 品牌、媒體、協會、博彩數據 | 授權/訂閱 | P4+ | 極高毛利、強護城河 |
+| **R6** | 媒體/內容/轉播分潤 | 平台、廣告主 | 分潤/授權 | P4+ | 視內容規模 |
+| **R7** | 玩家增值（履歷 Pro、報名禮包、電商） | 玩家 | 訂閱/交易 | P4+ | 量大但客單低 |
+
+> **投資人關注的曲線**：R1+R2 證明「能簽到錢、能活」；R4+R5 是「估值想像力」（可複利、強護城河）。
+
+---
+
+## 3. 飛輪與收入的耦合（誰在哪一圈被點亮）
+
+```
+        ┌──────────── 辦認證賽事 (R3 覆蓋成本) ────────────┐
+        │                                                  │
+        ▼                                                  │
+   產生乾淨賽果 ──► Player Passport + 評分 ──► 受眾與資料變大
+        │                                   │
+        │                                   ├─► R1/R2 賽事贊助（受眾+數據可售）★第一桶金
+        │                                   ├─► R5 資料/評分授權（資料夠厚才可售）
+        ▼                                   │
+   球館想成為資料節點 ──► R4 認證球館訂閱 ───┘
+        │
+        ▼
+   玩家黏在自己的履歷 ──► R6/R7 媒體與增值
+```
+
+> 每多辦一場賽、每多一個 Passport，**R1/R2 的可售庫存與 R5 的資料價值同步變厚**——這就是飛輪與收入的耦合點。
+
+---
+
+## 4. 單位經濟（Unit Economics）的兩個基本單元 🔧
+
+APEX 的單位經濟要用**兩個單元**看，不要混在一起：
+
+### 4.1 單元 A：一場認證賽事的 P&L 🔧
+
+```
+收入：報名費 + 單場贊助 + 周邊
+成本：場租/檯時機會成本 + 裁判/賽務 + 獎金 + 製作(直播/拍攝) + 平台分攤
+目標：P0 階段「贊助 + 報名費 ≥ 直接辦賽成本」即可（先不追求利潤）
+```
+
+- **賽事不是利潤中心，是資料與曝光的生產線。** 它的 KPI 是「每場淨成本 / 新增 Passport 數 / 贊助可展示性」。
+
+### 4.2 單元 B：一個 Player Passport 的長期價值 🔧
+
+```
+取得成本 ≈ 賽事淨成本 / 該場新增活躍 Passport 數
+長期價值 ≈ 該玩家帶來的（重複參賽 + 資料對贊助/評分的邊際貢獻 + 未來增值/電商）
+```
+
+- Passport 的價值**大部分不直接來自玩家付費**，而來自「他讓資料更厚、讓贊助更值錢」。
+- 這是為什麼玩家端可以**長期免費**：他們是資產，不是第一收入。
+
+> 🔧 所有金額待 P0 實辦後用真實票據與報價回填。此處只立**會計框架**，不立數字。
+
+---
+
+## 5. 定價原則（先立原則，後填數字）
+
+1. **贊助定價綁「可量化觸及 + 數據」**：見 `/sponsorship-research/04`，用 impressions/reach/Passport 數定價，而非拍腦袋。
+2. **報名費只為覆蓋成本 + 降低 no-show**，不當利潤；可用「報名費綁定 Passport 啟用」提高資料留存。
+3. **認證球館訂閱對標中國心理價位**（軟體年費 + 不抽成），但 APEX 的差異是「賽事帶客 + 評分認證」，不是純 POS。
+4. **資料/評分授權採分級**：公開排行免費引流，深度資料/API/歷史回溯收費。
+5. **玩家增值走 freemium**：履歷與評分永久免費，Pro（深度分析、客製履歷、報名禮包）才收費。
+
+---
+
+## 6. 為什麼這個模式對投資人「性感」
+
+| 投資人關心 | APEX 的答案 |
+|-----------|------------|
+| 可規模化？ | 賽事可系列化/區域複製；評分/資料是軟體邊際成本 |
+| 護城河？ | 歷史賽果資料 + 評分標準 + 球館網路（見 `05`） |
+| 複利收入？ | R4 訂閱 + R5 資料授權可複利 |
+| 早期能活？ | R1/R2 贊助 + R3 報名費覆蓋早期 |
+| 退出想像？ | 成為區域評分標準/賽事平台，對標 DUPR/FargoRate/Matchroom 的併購與融資 |
+
+---
+
+## 7. 本篇結論
+
+1. APEX **不是先賣軟體**，而是先生產「可贊助的賽事資產」與「可投資的成長故事」。
+2. 收入按 **R1/R2 贊助（先）→ R3 報名（覆蓋成本）→ R4 球館 → R5 資料 → R6/R7 媒體與玩家** 分階段點亮。
+3. 單位經濟分「賽事 P&L（生產線）」與「Passport 長期價值（資產）」兩個單元，玩家端可長期免費。
+4. 定價一律綁可量化價值（觸及/數據/帶客），不拍腦袋。
+5. 對投資人的賣點 = 可規模化 + 資料護城河 + 複利收入 + 早期能活 + 清楚退出對標。
+
+> 下一篇 `03`：用真實對標公司（DUPR、FargoRate、Matchroom 等）驗證每一段路都有人走通過。
+</script><div class="rendered" id="doc-2"></div></section>
+<section class="doc" data-short="對標與競品地圖"><script type="text/markdown" id="md-3">
+# 03 · 對標公司與競品地圖
+
+> 目標：證明 APEX 想走的每一段路，**都有人走通過**；同時畫清楚「誰是我們的對手、誰是我們的對標、誰是我們的合作對象」。
+> 對標數字附來源；無一手來源者標 🔧。
+
+---
+
+## 0. 三類參照物，不要混為一談
+
+| 類別 | 意義 | 對 APEX 的用途 |
+|------|------|--------------|
+| **對標（Comparable）** | 不同運動/地區，但模式相同，已驗證可行 | 證明商業模式可行 + 估值想像力 |
+| **競品（Competitor）** | 同樣做撞球賽事/評分/數據工具 | 直接搶用戶與資料的對手 |
+| **合作/通路（Partner）** | 協會、器材商、平台、媒體 | 取得選手池、賽事、贊助、流量 |
+
+---
+
+## 1. 對標公司（證明路徑可行）
+
+### 1.1 DUPR — 「一個評分系統可以是一家被投資的公司」⭐
+
+- 全名 Dynamic Universal Pickleball Rating，2021 年由 Steve Kuhn 創立（原名 Dreamland）。`[B1]`
+- 評分 2–8（0.001 級距）、每場即時更新、含 **reliability（1–100%，>60% 視為可靠）**；更新考量對手分、勝負、**分差**與**近期性**。`[B1]`
+- **2024 年 1 月，Andre Agassi、David Kass、Raine Ventures 等取得 DUPR 控股權並投資 800 萬美元。**`[B1]`
+
+> **對 APEX 的意義**：這是最直接的對標——**一個運動評分系統本身就能成為被知名投資人收購/注資的標的**。
+> DUPR 證明「評分即資產」。APEX 對撞球做的，正是 DUPR 對匹克球做的事，且撞球的**跨賽制複雜度更高、護城河更深**。
+
+### 1.2 FargoRate — 「撞球評分的事實標準長什麼樣」
+
+- 進袋撞球最接近 DUPR 的全球評分系統，Bradley–Terry 全域最大似然、每日全域最佳化（見 `/research/05`）。
+- 證明**撞球評分標準是會被全球採用的基礎設施**；但其覆蓋僅進袋三球種、不含開倫、跨賽制留白。
+
+> **對 APEX 的意義**：FargoRate 是**對標 + 潛在競爭 + 潛在合作**三重身分。APEX 的差異化＝跨賽制 + 賽事 OS + 在地賽事資料，而非只做一把尺。
+
+### 1.3 Matchroom Sport — 「把小眾球類做成可估值的賽事 IP」⭐
+
+- 1982 年 Barry Hearn 創立，從斯諾克/拳擊起家，擴張到撞球（Mosconi Cup、World Pool Masters、World Cup of Pool）、飛鏢、乒乓等。`[B2]`
+- 2009 年起主導 World Snooker Tour，推升獎金與賽事數。`[B2]`
+- 拳擊部門 2023 年營收約 **2.35 億美元**；與 DAZN 簽過約 **7.4 億英鎊**的轉播協議。`[B2]`
+- **2026 年 5 月以「逾 10 億英鎊」估值出售 15% 股權給美國私募 Bruin Capital。**`[B2]`
+
+> **對 APEX 的意義**：Matchroom 證明**「賽事推廣 + 轉播權 + 節目化」可以把利基球類做成十億級資產**。
+> APEX 想做的「賽事 IP + 贊助 + 媒體」這條線，Matchroom 是天花板級對標（雖然量級不同）。
+
+### 1.4 中式八球 / Joy（喬氏）— 「器材商即聯盟，獎金即信號」
+
+- 中式八球（Heyball）已是中國最大撞球運動，**主要賽事獎金是撞球界數一數二**。`[B3]`
+- 喬氏（Joy）以器材商身分自辦世界級賽事、塑造規則、把中式八球國際化（見 `/tournament-research/03`）。
+
+> **對 APEX 的意義**：證明**巨額獎金 + 群眾報名 + 商業聯盟**模式在華語撞球可行；同時也是 APEX 進中式八球大市場時的**既有勢力與潛在對手**。
+
+### 1.5 其他可借鏡對標
+
+- **UTR（網球）/ WHS（高爾夫差點）**：跨層級統一評分被廣泛採用的證據（見 `/research/`）。
+- **電競平台（FACEIT/Challonge/ESL）**：賽事工具 + 天梯 + 社群的組合模式。
+
+---
+
+## 2. 競品地圖（直接搶用戶與資料）
+
+| 競品類型 | 代表 | 它解決什麼 | APEX 的差異 |
+|---------|------|-----------|------------|
+| **賽事報名/賽程工具** | CueScore、DigitalPool、Challonge | 報名、籤表、賽程 | APEX 綁定**評分 + Player Passport + 在地賽事網路**，不只是賽程工具 |
+| **撞球評分系統** | FargoRate | 進袋全球評分 | APEX 做**跨賽制 + 賽事 OS + 在地資料**，且服務華語/東南亞 |
+| **手工流程** | LINE/FB 社團 + Excel + 紙本 | 多數在地賽事現況 | APEX 把手工流程數位化並沉澱資料 |
+| **店務 SaaS** | 中國/東南亞廠商（見 saas-research） | 計時/POS/燈控 | APEX 不正面打 POS，以「賽事節點」切入 |
+
+> **關鍵判斷**：在台灣/華語/東南亞，**「賽事 + 跨賽制評分 + 玩家身份」三合一且在地化**的玩家，目前公開資料中少見——這是 APEX 的縫隙。
+> 但 CueScore/DigitalPool 已有賽程工具基礎，APEX 不能只做工具，必須靠**資料飛輪 + 評分 + 在地賽事**形成差異。
+
+---
+
+## 3. 合作/通路（不是對手，是放大器）
+
+| 對象 | 能給 APEX 什麼 | APEX 能給對方什麼 |
+|------|--------------|------------------|
+| 撞球協會（CTBA 等） | 選手池、賽事正當性 | 數位化賽務、評分、年輕觀眾 |
+| 器材商（球桿/球桌品牌） | 贊助、通路、明星選手 | 曝光、選手數據、共同賽事 |
+| 球館 | 場地、客群、賽事落點 | 帶客、認證、評分賽 |
+| 媒體/串流平台 | 觸及、轉播 | 賽事內容、明星故事 |
+| 地方政府/觀光 | 場地、補助、城市行銷 | 賽事帶來的人流與話題 |
+
+---
+
+## 4. 競爭定位圖（兩軸）
+
+```
+            高｜跨賽制 / 資料深度
+               │
+               │      ● APEX（目標位）
+               │
+  FargoRate ●  │  ● DUPR(他運動對標)
+               │
+   ────────────┼────────────────► 在地賽事/玩家身份整合度
+               │
+ CueScore ●    │  ● 手工 LINE/FB
+ DigitalPool ● │
+            低 │
+```
+
+> APEX 的目標象限：**高跨賽制/資料深度 × 高在地賽事整合**——這個象限目前公開資料中**少見有玩家完整佔據**（須持續查證，避免絕對化）。
+
+---
+
+## 5. 對標給投資人的三句話
+
+1. **DUPR 證明**：運動評分系統本身就是可被頂級投資人注資的資產（$8M, 2024）。`[B1]`
+2. **Matchroom 證明**：利基球類的賽事 IP 可做到十億級估值（£1bn, 2026）。`[B2]`
+3. **FargoRate / 中式八球證明**：撞球評分標準會被採用、撞球賽事獎金與群眾規模真實存在。
+
+> APEX = 把這三件事**綁在一起**、發生在**華語/東南亞**、且**跨賽制**——一個尚無人完整佔據的位置。
+
+---
+
+## 6. 本篇結論
+
+- 對標、競品、合作三類不要混淆：DUPR/Matchroom/FargoRate 是**對標與想像力**；CueScore/DigitalPool/FargoRate 是**競品**；協會/器材商/球館/媒體是**放大器**。
+- APEX 的差異化不在「做評分」或「做賽程工具」單點，而在**跨賽制評分 × 在地賽事資料飛輪 × 玩家身份**的三合一。
+- 投資敘事可直接掛靠三個已驗證對標的成功，降低「這條路沒人走過」的疑慮。
+
+---
+
+## 參考來源
+
+- `[B1]` ✅ DUPR — Wikipedia「List of pickleball organizations」DUPR 段：2021 創立、評分 2–8、reliability、即時更新（含分差與近期性）；2024-01 Agassi/Kass/Raine 取得控股權並投資 $8M。https://en.wikipedia.org/wiki/List_of_pickleball_organizations
+- `[B2]` ✅ Matchroom Sport — Wikipedia：1982 創立、Mosconi Cup/World Pool Masters、2009 主導 WST、拳擊 2023 營收 $235M、DAZN £740M、2026-05 以逾 £1bn 估值售 15% 給 Bruin Capital。https://en.wikipedia.org/wiki/Matchroom_Sport
+- `[B3]` ✅ Eight-ball (Heyball 段) — Wikipedia：中式八球為中國最大撞球運動，主要賽事獎金為撞球界最高之一。https://en.wikipedia.org/wiki/Eight-ball
+- 交叉索引：FargoRate/UTR/WHS 一手來源見 `/research/SOURCES.md`；中式八球賽事與 Joy 見 `/tournament-research/03`。
+
+> 存取日期：2026-06。對標公司之估值/募資為其公開報導，APEX 自身財務數字另見 `04` 且全為 🔧 假設。
+</script><div class="rendered" id="doc-3"></div></section>
+<section class="doc" data-short="財務模型與里程碑"><script type="text/markdown" id="md-4">
+# 04 · 財務模型與里程碑
+
+> 目標：給出一個**可被質疑、可被替換數字**的財務骨架，以及清楚的**里程碑與止損判準（kill criteria）**。
+> 本篇不給「看起來很美的假數字」，而是給**結構 + 假設清單 + 判準**。所有數字標 🔧。
+
+---
+
+## 0. 原則：先立模型結構，後填數字
+
+投資人不信精美的五年預測，他們信**「假設清楚、可被挑戰」**的模型。
+因此本篇刻意只立**驅動變數（drivers）**與**會計結構**，數字一律 🔧，待 P0 實辦後回填。
+
+---
+
+## 1. 收入模型（driver-based）
+
+### 1.1 贊助收入（R1+R2，第一桶金）🔧
+
+```
+贊助年收入 = 年度冠名/系列贊助額
+           + Σ(單場可售贊助位 × 平均單價 × 簽約率)
+```
+
+驅動變數：
+- 年賽事場次
+- 每場可售贊助位（冠名/分項/物料/數位）
+- 平均單價（見 `/sponsorship-research/03` 套餐）
+- 簽約率（業務轉換）
+
+### 1.2 報名/賽事收入（R3，覆蓋成本）🔧
+
+```
+賽事毛收 = Σ(參賽人數 × 報名費) − 獎金 − 直接辦賽成本
+目標：P0–P1 階段 ≈ 0 或微正（不當利潤）
+```
+
+### 1.3 認證球館訂閱（R4，複利）🔧
+
+```
+球館 ARR = 認證球館數 × 平均月費 × 12 × (1 − 流失率)
+```
+
+### 1.4 資料/評分授權（R5，高毛利）🔧
+
+```
+資料收入 = Σ(授權客戶 × 授權年費) + API 用量計費
+前提：資料覆蓋與評分可信度達到「可被第三方付費採用」的門檻
+```
+
+### 1.5 玩家增值/電商（R7，長尾）🔧
+
+```
+玩家收入 = 活躍 Passport × 付費轉換率 × ARPU
+```
+
+---
+
+## 2. 成本模型
+
+| 成本類別 | 內容 | 隨什麼變動 |
+|---------|------|----------|
+| **賽事直接成本** | 場租/檯時、裁判賽務、獎金、製作（直播/拍攝） | 賽事場次與規模 |
+| **產品研發** | Tournament OS、Passport、評分引擎、資料管線 | 固定 + 階段投入 |
+| **業務與行銷** | 贊助業務、賽事招商、社群內容 | 隨擴張 |
+| **營運與售後** | 球館導入、客服、資料營運 | 隨 R4/R5 規模 |
+| **G&A** | 行政、法務（贊助合約/資料隱私）、財務 | 固定 |
+
+> 早期最大成本是**賽事直接成本 + 研發**；R4/R5 起來後售後成本上升。
+
+---
+
+## 3. 三階段財務形態（定性，非預測）🔧
+
+| 階段 | 收入主力 | 是否賺錢 | 投資人看什麼 |
+|------|---------|---------|-------------|
+| **P0–P1（種子）** | R1/R2 贊助 + R3 報名 | 燒錢，求打平單場 | 飛輪能不能轉：賽事辦得成、資料留得下、贊助簽得到 |
+| **P2–P3（成長）** | 贊助系列化 + R4 球館起步 | 仍投入，毛利改善 | 複購：贊助續約率、球館留存、Passport 活躍 |
+| **P4+（擴張）** | R4 訂閱 + R5 資料 + R6/R7 | 可見規模毛利 | 複利曲線與護城河變現 |
+
+---
+
+## 4. 募資與資金用途（Use of Proceeds）🔧
+
+> 假設先走一輪**種子/天使**，金額待定（🔧）。資金用途優先序：
+
+1. **辦賽能力**（賽務團隊 + 製作 + 旗艦賽事啟動）——直接產生贊助資產與資料。
+2. **產品最小核**（Tournament OS Core + Player Passport + 9-ball 評分）。
+3. **贊助業務**（一個能簽下第一個冠名的人）。
+4. **資料/法務基礎**（資料隱私、贊助合約、賽事保險）。
+
+> **里程碑式撥款**：每一輪/每一筆都綁定下節的里程碑，未達標不投下一段。
+
+---
+
+## 5. 里程碑（Milestones）與 KPI
+
+### 5.1 北極星指標（North Star）
+
+> **「累積可信賽果局數」**（completed certified rack count）——它同時驅動評分品質、資料價值與贊助說服力。
+
+### 5.2 階段里程碑 🔧
+
+| 階段 | 必達里程碑 | 對應 KPI |
+|------|-----------|---------|
+| **P0** | 辦成第一場認證賽 + 賽果完整入庫 + 首批 Passport | 賽事完賽率、賽果入庫率、Passport 啟用數 |
+| **P1** | 簽下第一個冠名/系列贊助 + 連辦多站 | 贊助合約額、賽事場次、評分校準指標（log loss/Brier） |
+| **P2** | 進袋家族評分上線 + 玩家自發分享 Passport | Passport 分享率、回訪參賽率 |
+| **P3** | 第一批認證球館付費 + 贊助續約 | 球館 ARR、贊助續約率 |
+| **P4** | 第一個資料/評分付費客戶 | 資料 ARR、API 採用 |
+
+### 5.3 止損判準（Kill / Pivot Criteria）⭐
+
+> 投資人尤其看重「你怎麼知道自己錯了」。明確寫下：
+
+- **玩家不在意身份**：辦了多場後，Passport 啟用/分享/回訪率持續極低 → 質疑飛輪前提，pivot。
+- **球館不願辦**：付費或免費都招不到願意持續辦認證賽的球館 → 重新檢視價值主張。
+- **贊助簽不到**：多次提案後仍無人為「撞球賽事曝光 + 數據」付費 → 第一付費者假設被證偽，重估模式。
+- **資料不可信**：賽果造假/稀疏導致評分無法達到可用門檻 → 收緊賽事認證或暫緩對外評分。
+
+---
+
+## 6. 敏感度與情境（Scenario）🔧
+
+| 情境 | 關鍵假設 | 結果 |
+|------|---------|------|
+| **保守** | 贊助簽約慢、玩家黏著低 | 靠少量旗艦賽 + 報名費勉強運轉，慢速累積資料 |
+| **基準** | 拿到 1–2 個系列贊助、Passport 穩定累積 | 飛輪緩轉，具備下一輪募資故事 |
+| **樂觀** | 冠名贊助 + 球館網路 + 首個資料客戶 | 進入複利曲線，估值對標想像力打開 |
+
+> 三情境的差別幾乎都壓在**兩個變數**：①玩家是否在意 Passport；②是否簽得到贊助。**這正是 P0–P1 要驗證的。**
+
+---
+
+## 7. 本篇結論
+
+1. 財務模型以**驅動變數 + 會計結構 + 止損判準**呈現，而非假精確預測。
+2. 北極星 = **累積可信賽果局數**，一個指標同時驅動評分、資料與贊助。
+3. 募資採**里程碑式撥款**，資金優先投「辦賽能力 + 最小產品核 + 贊助業務」。
+4. 明確寫下 **kill/pivot 判準**——這是投資人信任的關鍵，也是團隊不自欺的紀律。
+5. 全篇數字 🔧 待 P0 真實數據回填；現在的價值是**對齊驅動變數**。
+
+> 下一篇 `05`：護城河（為什麼後進者追不上）、風險清單、以及對投資人/贊助商的募資敘事。
+</script><div class="rendered" id="doc-4"></div></section>
+<section class="doc" data-short="護城河 · 風險 · 募資"><script type="text/markdown" id="md-5">
+# 05 · 護城河、風險與募資敘事
+
+> 目標：回答投資人三個必問——**「為什麼別人追不上？」「最大風險是什麼？」「故事怎麼講？」**
+> 同時把贊助商版本的敘事也準備好（第一付費者要兩套說法）。
+
+---
+
+## 1. 護城河（Moat）：為什麼後進者追不上
+
+### 1.1 資料飛輪 / 歷史資料壁壘 ⭐（最硬）
+
+- 評分系統的價值來自**歷史對局資料**。FargoRate 的強大來自累積數年的全球局數。
+- APEX 越早辦賽、越多賽果入庫，**後進者越無法追上**——他們沒有歷史資料，評分就不準，賽事就不採用，又拿不到資料。
+- 這是**典型的資料網路效應**：先發者的優勢隨時間複利。
+
+### 1.2 評分標準的鎖定（Standard Lock-in）
+
+- 一旦玩家把「APEX 評分/Passport」當成自己的身份貨幣、球館把它當分級依據，**切換成本極高**。
+- 對標：FargoRate 之於進袋、DUPR 之於匹克球——一旦成為事實標準，難以被取代。
+
+### 1.3 賽事網路與在地關係
+
+- 認證球館 + 賽事節點 + 協會/器材商關係，是**線下、難以遠端複製**的資產。
+- 純軟體競品（如海外賽程工具）缺乏在地賽事與關係，無法輕易進入華語/東南亞現場。
+
+### 1.4 跨賽制能力（技術縱深）
+
+- 跨賽制（進袋家族 + 開倫）統一評分有真實的階層貝葉斯技術縱深（見 `/research/06`），
+- 不是套個現成 Elo 就能做——對純工具型競品是門檻。
+
+### 1.5 護城河的時間性（誠實版）
+
+> 🔧 **早期 APEX 其實沒有護城河**——護城河是「辦了夠多賽、累積了夠多資料、綁定了夠多玩家/球館」之後才成立的。
+> 因此募資敘事必須誠實：**我們募的錢，就是用來把護城河挖出來的**。
+
+---
+
+## 2. 風險清單與對策
+
+| # | 風險 | 嚴重度 | 對策 |
+|---|------|-------|------|
+| R1 | **玩家不在意評分/身份**（飛輪前提崩） | 高 | P0 小規模快速驗證 Passport 啟用/分享/回訪；不行就 pivot |
+| R2 | **贊助簽不到**（第一付費者假設崩） | 高 | 先做 1 場可展示的旗艦賽當 sales demo；備好數據化贊助套餐（sponsorship-research/03） |
+| R3 | **賽果造假/稀疏 → 評分不可信** | 高 | 只計認證賽 completed match、reliability 門檻、離群偵測、退賽分類（見 research/08 待補） |
+| R4 | **球館不願辦/不願付** | 中高 | 先用「帶客 + 認證 + 評分」價值換取參與，付費延後 |
+| R5 | **海外賽程工具/FargoRate 先進入** | 中 | 靠在地賽事資料 + 跨賽制 + 中文化差異化；可談合作而非硬碰 |
+| R6 | **中式八球大市場的封閉與抄襲** | 中 | 不先打中國；以中立第三方評分身分，先東南亞 |
+| R7 | **資料隱私/未成年/博彩合規** | 中 | 隱私同意、未成年政策、博彩贊助合規審查（見下） |
+| R8 | **團隊帶寬**（同時辦賽 + 做產品 + 跑業務） | 中高 | 里程碑式聚焦，P0 只做台灣 9 號球單線 |
+| R9 | **明星/賽事依賴**（旗艦賽辦不動則故事斷） | 中 | 系列化 + 在地球館分散，不押單一大賽 |
+
+### 2.1 特別注意：博彩與資料的雙面性
+
+- 撞球（尤其斯諾克/九球）與**博彩**關係密切，博彩數據方可能是 R5 的高價客戶，**也是合規與形象風險**。
+- 原則：**任何博彩相關贊助/資料合作，先過法務與品牌合規**；早期寧可保守，避免傷害賽事公信力與選手保護（見 `/tournament-research/05` 反賭規定）。
+
+---
+
+## 3. 募資敘事（給投資人）
+
+### 3.1 一段式 pitch
+
+> 撞球在華語與東南亞有龐大線下參與與正在膨脹的獎金，但**線上身份、評分與數據基礎設施幾乎空白**。
+> APEX 從台灣賽事現場做起，用自辦認證賽持續產生乾淨賽果，沉澱成跨賽制玩家評分與履歷，
+> 形成隨時間複利的資料護城河。短期靠賽事贊助變現，中長期成為區域撞球的評分標準與賽事平台。
+> DUPR 證明評分可成資產、Matchroom 證明賽事 IP 可達十億級——**APEX 把兩者綁在一起，發生在一個還沒人佔據的市場。**
+
+### 3.2 投資人最可能的反對 & 回應
+
+| 反對 | 回應 |
+|------|------|
+| 「撞球太小眾」 | 線下規模與獎金真實（中式八球/九球）；我們先做高價值的競技層 + 贊助觸及全金字塔 |
+| 「玩家不會付錢」 | 對，所以玩家不是第一付費者；贊助與投資先付，玩家是資產與飛輪 |
+| 「FargoRate 已經做了」 | 它只做進袋、不跨賽制、不在地、不做賽事 OS；可對標可合作 |
+| 「沒有護城河」 | 早期確實沒有；募資就是去挖資料護城河，且有時間複利與標準鎖定 |
+| 「怎麼退出」 | 對標 DUPR 被注資、Matchroom 被私募入股；成為區域標準後具併購價值 |
+
+### 3.3 投資人版「相信才成立」的三個前提（誠實揭露）
+
+1. 玩家會把 APEX 評分/Passport 當成在意的身份。
+2. 至少存在願意為「撞球賽事曝光 + 數據」付費的贊助商。
+3. 賽果資料能持續、乾淨地累積到可信門檻。
+
+> **這三點就是 P0–P1 的驗證任務。** 把它們當成假設明說，比假裝已成立更可信。
+
+---
+
+## 4. 贊助商敘事（給第一付費者的另一套說法）
+
+> 投資人買「未來」，贊助商買「現在的注意力與數據」。同一個 APEX，兩套話術。
+
+> 給贊助商：APEX 把撞球玩家聚到**有舞台、有明星、有直播、有數據**的賽事裡。
+> 你贊助的不只是 logo 露出，而是**可量化的觸及 + 一群有消費力的撞球玩家的數據關係**——
+> 我們能告訴你有多少人看了、多少人到場、多少玩家因此進入你的品牌。
+
+（細節展開於 `/sponsorship-research/`。）
+
+---
+
+## 5. 本篇結論
+
+1. APEX 的護城河是**資料飛輪 + 評分標準鎖定 + 在地賽事網路 + 跨賽制技術縱深**，但**早期尚未成立**——募資就是去挖它。
+2. 最大風險集中在三個前提（玩家在意身份、贊助願付費、資料可信），P0–P1 就是去證偽/證實它們。
+3. 博彩與資料是高價但高風險，一律先過合規。
+4. 對投資人講「未來平台與護城河」，對贊助商講「現在的觸及與數據」——兩套敘事，同一個飛輪。
+
+---
+
+## 全線交叉索引
+
+- 評分技術與跨賽制：`/research/06`、`/research/07`
+- 賽事執行與賽務：`/tournament-research/`
+- 玩家需求與社群：`/community-research/`
+- 球館 SaaS 與資料節點：`/saas-research/`
+- 贊助產品與成效衡量：`/sponsorship-research/`
+- 市場/商業模式/對標/財務：本線 `01`–`04`
+</script><div class="rendered" id="doc-5"></div></section>
+  </main>
+</div>
+<button class="backtop" id="backtop" aria-label="back to top">↑</button>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script>
+(function(){
+  marked.setOptions({gfm:true, breaks:false});
+  document.querySelectorAll('script[type="text/markdown"]').forEach(function(s){
+    var i = s.id.split('-')[1];
+    var t = document.getElementById('doc-'+i);
+    try{ t.innerHTML = marked.parse(s.textContent.trim()); }
+    catch(e){ t.textContent = s.textContent; }
+  });
+
+  document.querySelectorAll('.rendered table').forEach(function(tb){
+    var w=document.createElement('div'); w.className='tbl';
+    tb.parentNode.insertBefore(w,tb); w.appendChild(tb);
+  });
+
+  var navlist=document.getElementById('navlist');
+  var secs=[].slice.call(document.querySelectorAll('section.doc'));
+  secs.forEach(function(sec,i){
+    sec.id='sec-'+i;
+    var h1=sec.querySelector('h1');
+    var grp=document.createElement('div'); grp.className='navdoc';
+    var a=document.createElement('a'); a.className='navtop'; a.href='#sec-'+i;
+    a.textContent=(sec.dataset.short||(h1?h1.textContent:('Doc '+i)));
+    grp.appendChild(a);
+    var subs=document.createElement('div'); subs.className='subs';
+    [].slice.call(sec.querySelectorAll('h2')).forEach(function(h2,j){
+      h2.id='sec-'+i+'-'+j; h2.style.scrollMarginTop='12px';
+      var sa=document.createElement('a'); sa.href='#sec-'+i+'-'+j;
+      sa.textContent=h2.textContent;
+      subs.appendChild(sa);
+    });
+    grp.appendChild(subs); navlist.appendChild(grp);
+    sec.style.scrollMarginTop='12px';
+  });
+  var navdocs=[].slice.call(document.querySelectorAll('.navdoc'));
+
+  var bar=document.getElementById('bar'), bt=document.getElementById('backtop');
+  function spy(){
+    var h=document.documentElement;
+    var max=h.scrollHeight-h.clientHeight;
+    bar.style.width=(max>0?(h.scrollTop/max*100):0)+'%';
+    bt.classList.toggle('show', h.scrollTop>600);
+    var ai=0;
+    secs.forEach(function(s,i){ if(s.getBoundingClientRect().top<=170) ai=i; });
+    navdocs.forEach(function(g,i){ g.classList.toggle('active', i===ai); });
+    var h2s=[].slice.call(secs[ai].querySelectorAll('h2'));
+    var hj=-1; h2s.forEach(function(x,j){ if(x.getBoundingClientRect().top<=170) hj=j; });
+    document.querySelectorAll('.subs a.on').forEach(function(a){a.classList.remove('on');});
+    var sub=navdocs[ai].querySelectorAll('.subs a');
+    if(hj>=0&&sub[hj]) sub[hj].classList.add('on');
+  }
+  bt.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});
+  window.addEventListener('scroll',spy,{passive:true});
+  window.addEventListener('resize',spy);
+  spy();
+})();
+</script>
+</body>
+</html>

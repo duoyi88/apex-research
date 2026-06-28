@@ -280,10 +280,10 @@
     <!-- ============ HERO ============ -->
     <header class="hero">
       <h1>撞球店雲端 SaaS 系統研究</h1>
-      <p>研究全球撞球店家所用的管理系統——中國、東南亞與歐美的代表廠商、功能差異與市場趨勢，並推導出我們若要打造一套雲端 SaaS 服務應具備的功能、競品定位與可施工的技術架構。</p>
+      <p>研究全球撞球店家所用的管理系統——中國、東南亞與歐美的代表廠商、功能差異與市場趨勢。最新策略：SaaS 不作為 APEX 第一產品，而是先成為認證球館工具包，服務賽事排程、賽果同步、玩家綁定與基礎稽核，再擴成完整店務系統。</p>
       <div class="pills">
         <span class="pill">🇨🇳 中國 · 無人自助</span>
-        <span class="pill">🌏 東南亞 · 防作弊藍海</span>
+        <span class="pill">🌏 東南亞 · 待驗證機會</span>
         <span class="pill">🌎 歐美 · POS＋預約</span>
         <span class="pill">📡 IoT 燈控盒設計</span>
         <span class="pill">📑 28＋ 一手來源</span>
@@ -297,7 +297,7 @@
       <div class="takeaways">
         <div class="ta"><b>防「時間財」流失是亞洲第一痛點。</b> 店員偷算檯費、少報時間、私吞飲料錢。越南文章直指「約 80% 撞球店每天都在被員工偷錢」。<b>精確計時＋物聯網燈控（開檯才亮燈）＋防作弊稽核</b>是入場門票。</div>
         <div class="ta"><b>中國已走到無人值守自助共享球房。</b> 靠 90%+ 行動支付與無人經濟紅利，掃碼開檯、遠端管理、自動分潤成主流，並疊加 AI 裁判／自動計分／精彩剪輯／人臉門禁。</div>
-        <div class="ta"><b>東南亞仍以「有人服務＋POS＋防作弊」為主。</b> 雲端與自助化落後中國一個世代，是明顯<b>藍海</b>。</div>
+        <div class="ta"><b>東南亞仍以「有人服務＋POS＋防作弊」為主。</b> 公開資料顯示雲端與自助化可能落後中國，是值得用店主訪談與 demo 驗證的機會。</div>
         <div class="ta"><b>在地化是生死線。</b> 馬來西亞要 DuitNow QR＋LHDN 電子發票、越南要 HĐĐT、泰國要 PromptPay。支付＋稅務合規缺一不可。</div>
         <div class="ta"><b>商業模式：不抽成。</b> 中國廠商普遍主打「軟體年費＋硬體買斷、<b>不抽成</b>」，是重要賣點（如一桉約 1000 元／2 年＋硬體 160 元／桌）。</div>
       </div>
@@ -505,12 +505,13 @@
 
     <!-- ============ STRATEGY ============ -->
     <section id="strategy">
-      <h2><span class="n">9</span>我們的切入策略（缺口＝機會）</h2>
+      <h2><span class="n">9</span>我們的切入策略（先球館節點，後完整 SaaS）</h2>
       <div class="tbl">
         <table>
           <thead><tr><th>缺口觀察</th><th>機會</th><th>我方做法</th></tr></thead>
           <tbody>
-            <tr><td>東南亞自助化落後中國一個世代</td><td>藍海</td><td>把中國「掃碼開檯＋燈控」標配帶進越/泰/馬</td></tr>
+            <tr><td>APEX 自有賽事需要穩定資料來源</td><td>先手</td><td>把合作球館變成認證賽事節點：排程、檯次、賽果、玩家綁定先上線</td></tr>
+            <tr><td>公開資料顯示東南亞自助化落後中國</td><td>藍海假設</td><td>把中國「掃碼開檯＋燈控」標配帶進越/泰/馬，並以店主訪談驗證</td></tr>
             <tr><td>在地競品多為單機/半雲端</td><td>差異化</td><td>真・多租戶雲端＋遠端即時管理＋跨店跨幣別</td></tr>
             <tr><td>各國支付/發票分裂</td><td>護城河</td><td>模組化在地化（每進一國補支付＋發票）</td></tr>
             <tr><td>AI 裁判僅中國高端商用</td><td>高端差異點</td><td>第三階段切入，做品牌與高端球房賣點</td></tr>
@@ -518,24 +519,24 @@
           </tbody>
         </table>
       </div>
-      <div class="note">🎯 <b>定位：</b>「真雲端 SaaS ＋ 在地化合規 ＋ 中國級自助/燈控標配」三者疊加，是現有任一單一競品都尚未在東南亞同時補齊的位置。</div>
+      <div class="note">🎯 <b>定位：</b>完整 SaaS 是後續擴張層，不是第一產品。第一版應服務 APEX 認證賽與合作球館，把賽事資料、玩家身份與球館營運先串起來。</div>
     </section>
 
     <!-- ============ MVP ============ -->
     <section id="mvp">
-      <h2><span class="n">10</span>MVP 範圍（Phase 1）</h2>
+      <h2><span class="n">10</span>MVP 範圍（APEX 認證球館工具包）</h2>
       <div class="cards">
-        <div class="card"><span class="tag">必做 1</span><h4>計時計費引擎</h4><p>多球種/多時段/block、併拆檯、押金預付、抹零。</p></div>
-        <div class="card"><span class="tag">必做 2</span><h4>IoT 燈控盒</h4><p>開檯通電亮燈、結檯斷電；雲端＋本地雙控；斷網仍可開檯。</p></div>
-        <div class="card"><span class="tag">必做 3</span><h4>掃碼自助開檯</h4><p>掃 QR → 小程序/H5 → 付款/扣會員 → 自動亮燈。</p></div>
-        <div class="card"><span class="tag">必做 4</span><h4>POS＋庫存</h4><p>商品銷售自動扣庫、併入檯費、拆/合單、交接班。</p></div>
-        <div class="card"><span class="tag">必做 5</span><h4>會員儲值＋充贈</h4><p>儲值錢包、VIP 折扣、消費紀錄。</p></div>
-        <div class="card"><span class="tag">必做 6</span><h4>基礎報表＋防作弊</h4><p>日營收/上座率；不可竄改 audit log、權限分層。</p></div>
+        <div class="card"><span class="tag">必做 1</span><h4>賽事排程/檯次</h4><p>建立認證賽、分配檯號與場次時間，支援現場調度。</p></div>
+        <div class="card"><span class="tag">必做 2</span><h4>賽果輸入與確認</h4><p>比分、退賽、爭議狀態由賽務/裁判確認，回寫 rating pipeline。</p></div>
+        <div class="card"><span class="tag">必做 3</span><h4>玩家/會員綁定</h4><p>球館會員與 APEX Player Passport 綁定，避免同人多帳號。</p></div>
+        <div class="card"><span class="tag">必做 4</span><h4>基礎計時計費</h4><p>先支援賽事用檯與一般開檯的開始/結束、費率、人工調整留痕。</p></div>
+        <div class="card"><span class="tag">必做 5</span><h4>稽核日誌</h4><p>賽果、改比分、改價、開/結檯皆寫入不可竄改 audit log。</p></div>
+        <div class="card"><span class="tag">必做 6</span><h4>場館報表</h4><p>賽事用檯時數、參賽人數、玩家回流與基礎營收。</p></div>
       </div>
-      <div class="note">🚫 <b>MVP 不做：</b>AI 裁判/剪輯（P3）、助教抽成/團購核銷/預約候位（P2）、連鎖總部深度進銷存（P2）。</div>
+      <div class="note">🚫 <b>MVP 不做：</b>完整 POS/庫存、會員儲值、支付/發票 adapter、掃碼自助、AI 裁判/剪輯。IoT 燈控可做種子店 demo，但不是第一版必要條件。</div>
 
       <h3>🛠 互動範圍規劃器</h3>
-      <p class="lead">勾選你想納入的模組，下方即時估算開發量（人週為粗估，僅供排期參考）。P1 為收單門票，預設已選。</p>
+      <p class="lead">勾選你想納入的模組，下方即時估算開發量（人週為粗估，僅供排期參考）。原本 P1 收單門票已下調為後續完整 SaaS；第一版以認證球館節點為準。</p>
       <div class="toolbar">
         <button class="btn primary" onclick="scopePreset('mvp')">只做 MVP（P1）</button>
         <button class="btn" onclick="scopePreset('all')">全選</button>
@@ -654,10 +655,10 @@ t/{tenant_id}/store/{store_id}/dev/{device_id}/hb      <span class="k"># 心跳 
     <section id="roadmap">
       <h2><span class="n">13</span>落地路線圖</h2>
       <div class="road">
-        <div class="ph"><div class="when">P0 · 0–1 月</div><h4>燈控盒打樣</h4><p>ESP32＋繼電器、MQTT 跑通、單店單桌 demo。驗證「開檯亮燈、結檯斷電、斷網續控」。</p></div>
-        <div class="ph"><div class="when">P1 · 1–3 月</div><h4>收單門票</h4><p>計費引擎＋POS＋會員＋Edge 離線＋基礎報表，單店上線，找 1–2 家種子店。</p></div>
-        <div class="ph"><div class="when">P2 · 3–6 月</div><h4>可複製收訂閱</h4><p>自助掃碼＋在地支付/發票 adapter（首國）＋多店報表。</p></div>
-        <div class="ph"><div class="when">P3 · 6–12 月</div><h4>差異化</h4><p>助教抽成、預約候位、AI 裁判/剪輯（高端選配）。</p></div>
+        <div class="ph"><div class="when">P0 · 0–1 月</div><h4>認證賽事節點 demo</h4><p>排程、檯次、賽果、Player Passport 綁定，讓 1 家合作球館能承辦 APEX 認證賽。</p></div>
+        <div class="ph"><div class="when">P1 · 1–3 月</div><h4>基礎計費＋稽核</h4><p>基礎計時計費、操作日誌、場館報表，證明球館願意持續提供賽果與玩家資料。</p></div>
+        <div class="ph"><div class="when">P2 · 3–6 月</div><h4>燈控與自助試點</h4><p>IoT 燈控盒、Edge 離線、掃碼開檯，在種子店驗證「開檯亮燈、結檯斷電」。</p></div>
+        <div class="ph"><div class="when">P3 · 6–12 月</div><h4>完整店務 SaaS</h4><p>POS、庫存、會員儲值、在地支付/發票 adapter，擴成可收訂閱產品。</p></div>
       </div>
     </section>
 

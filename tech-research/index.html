@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+
+<!-- APEX access gate (soft, client-side) -->
+<style>
+  html.apexlock body>*:not(#apex-gate){display:none!important}
+  html.apexlock{overflow:hidden}
+  #apex-gate{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#084d2a 0%,#0b6b3a 55%,#12894b 100%);
+    font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft JhengHei",sans-serif}
+  #apex-gate .gbox{width:min(92vw,360px);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);
+    border-radius:18px;padding:34px 30px 28px;box-shadow:0 24px 60px rgba(0,0,0,.32);backdrop-filter:blur(8px);
+    text-align:center;color:#eafaf0}
+  #apex-gate .gicon{width:54px;height:54px;border-radius:50%;margin:0 auto 14px;display:flex;align-items:center;
+    justify-content:center;font-size:26px;background:#e7b53c;color:#3a2c00;font-weight:800;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+  #apex-gate h2{margin:0 0 4px;font-size:21px;font-weight:800;letter-spacing:.5px;color:#fff}
+  #apex-gate p{margin:0 0 20px;font-size:13px;color:#bfe6ce}
+  #apex-gate input{width:100%;padding:13px 15px;border-radius:10px;border:1px solid rgba(255,255,255,.25);
+    background:rgba(0,0,0,.18);color:#fff;font-size:18px;text-align:center;letter-spacing:6px;outline:none;
+    transition:border-color .15s}
+  #apex-gate input:focus{border-color:#e7b53c}
+  #apex-gate button{width:100%;margin-top:12px;padding:12px;border:none;border-radius:10px;cursor:pointer;
+    background:#e7b53c;color:#3a2c00;font-size:15px;font-weight:800;letter-spacing:1px;transition:filter .15s}
+  #apex-gate button:hover{filter:brightness(1.06)}
+  #apex-gate .ge{display:none;margin-top:12px;font-size:12.5px;color:#ffd7d2}
+  #apex-gate.bad .gbox{animation:apexshake .42s}
+  @keyframes apexshake{10%,90%{transform:translateX(-2px)}30%,70%{transform:translateX(5px)}50%{transform:translateX(-7px)}}
+</style>
+<script>
+(function(){
+  var KEY='apex_gate_v1', HASH=193354864;
+  function hf(s){var x=5381;for(var i=0;i<s.length;i++){x=(((x*33)&0xffffffff)^s.charCodeAt(i))>>>0;}return x;}
+  function ok(){try{return sessionStorage.getItem(KEY)==='1';}catch(e){return false;}}
+  if(ok())return;
+  var H=document.documentElement; H.classList.add('apexlock');
+  function build(){
+    if(document.getElementById('apex-gate'))return;
+    var o=document.createElement('div'); o.id='apex-gate';
+    o.innerHTML='<div class="gbox"><div class="gicon">&#9899;</div>'+
+      '<h2>APEX 研究中心</h2><p>請輸入通行密碼以檢視內容</p>'+
+      '<input type="password" inputmode="numeric" autocomplete="off" aria-label="password" placeholder="•••">'+
+      '<button type="button">進入</button>'+
+      '<div class="ge">密碼錯誤，請再試一次</div></div>';
+    (document.body||H).appendChild(o);
+    var inp=o.querySelector('input'), btn=o.querySelector('button'), err=o.querySelector('.ge');
+    function submit(){
+      if(hf((inp.value||'').trim())===HASH){
+        try{sessionStorage.setItem(KEY,'1');}catch(e){}
+        o.parentNode&&o.parentNode.removeChild(o); H.classList.remove('apexlock');
+      }else{
+        o.classList.add('bad'); err.style.display='block'; inp.value=''; inp.focus();
+        setTimeout(function(){o.classList.remove('bad');},460);
+      }
+    }
+    btn.addEventListener('click',submit);
+    inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();submit();}});
+    setTimeout(function(){inp.focus();},30);
+  }
+  if(document.body){build();}
+  else{document.addEventListener('DOMContentLoaded',build);
+    // also try ASAP so the overlay paints before body content
+    var t=setInterval(function(){if(document.body){clearInterval(t);build();}},8);}
+})();
+</script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>撞球賽事系統技術棧與架構研究 · APEX</title>
+<style>
+  :root{
+    --felt:#0b6b3a; --felt-dark:#084d2a; --felt-light:#12894b;
+    --ink:#1a2230; --muted:#5b6776; --line:#e3e8ee; --bg:#f6f8fa;
+    --card:#ffffff; --accent:#e7b53c; --chalk:#2b6cb0;
+    --radius:14px; --shadow:0 1px 3px rgba(16,32,55,.06),0 8px 24px rgba(16,32,55,.06);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft JhengHei",sans-serif;
+    color:var(--ink);background:var(--bg);line-height:1.78;-webkit-font-smoothing:antialiased}
+  a{color:var(--chalk);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  #bar{position:fixed;top:0;left:0;height:3px;width:0;z-index:50;
+    background:linear-gradient(90deg,var(--accent),var(--felt-light))}
+
+  .wrap{display:grid;grid-template-columns:282px 1fr;max-width:1320px;margin:0 auto}
+  nav.side{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;
+    background:var(--felt-dark);color:#dff3e6;padding:24px 16px 40px}
+  nav.side .brand{font-weight:800;font-size:20px;color:#fff;letter-spacing:.5px}
+  nav.side .brand span{color:var(--accent)}
+  nav.side .sub{font-size:12px;color:#9fd9b8;margin:2px 0 14px}
+  nav.side .home{display:inline-flex;align-items:center;gap:6px;color:#bfe6ce;font-size:12.5px;
+    background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);padding:6px 12px;
+    border-radius:8px;margin-bottom:16px}
+  nav.side .home:hover{background:rgba(255,255,255,.14);text-decoration:none}
+  .navlist{counter-reset:nd -1}
+  .navdoc{margin:2px 0}
+  .navtop{display:flex;align-items:center;gap:10px;color:#eafaf0;padding:8px 10px;border-radius:9px;
+    font-size:14.5px;font-weight:600}
+  .navtop::before{counter-increment:nd;content:counter(nd);flex:none;width:22px;height:22px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#1a2230;
+    background:#fff;box-shadow:inset 0 -2px 4px rgba(0,0,0,.25)}
+  .navdoc:nth-child(2) .navtop::before{background:#f5c518}
+  .navdoc:nth-child(3) .navtop::before{background:#1f6fd0;color:#fff}
+  .navdoc:nth-child(4) .navtop::before{background:#d6332e;color:#fff}
+  .navdoc:nth-child(5) .navtop::before{background:#6b3fa0;color:#fff}
+  .navdoc:nth-child(6) .navtop::before{background:#e8801a;color:#fff}
+  .navdoc:nth-child(7) .navtop::before{background:#0a8a6a;color:#fff}
+  .navtop:hover{background:rgba(255,255,255,.08);text-decoration:none}
+  .navdoc.active>.navtop{background:rgba(255,255,255,.16);color:#fff}
+  .subs{display:none;margin:2px 0 8px 32px;border-left:1px solid rgba(255,255,255,.15);padding-left:8px}
+  .navdoc.active .subs{display:block}
+  .subs a{display:block;color:#bfe6ce;font-size:13px;padding:4px 9px;border-radius:7px;margin:1px 0}
+  .subs a:hover{background:rgba(255,255,255,.07);text-decoration:none}
+  .subs a.on{background:var(--accent);color:#3a2c00;font-weight:700}
+
+  main{padding:0 0 90px;min-width:0}
+
+  header.hero{background:linear-gradient(135deg,var(--felt) 0%,var(--felt-light) 100%);
+    color:#fff;padding:56px 52px 48px;position:relative;overflow:hidden}
+  header.hero::after{content:"";position:absolute;right:-70px;top:-70px;width:300px;height:300px;
+    background:radial-gradient(circle,rgba(255,255,255,.16),transparent 70%);border-radius:50%}
+  header.hero::before{content:"";position:absolute;left:-40px;bottom:-90px;width:240px;height:240px;
+    background:radial-gradient(circle,rgba(0,0,0,.12),transparent 70%);border-radius:50%}
+  header.hero .eyebrow{font-size:13px;letter-spacing:3px;color:#bdebcf;text-transform:uppercase;font-weight:700}
+  header.hero h1{margin:8px 0 12px;font-size:34px;font-weight:800;letter-spacing:.5px;position:relative;z-index:1}
+  header.hero p{margin:0;max-width:820px;color:#e8f7ee;font-size:16px;position:relative;z-index:1}
+  .pills{margin-top:24px;display:flex;flex-wrap:wrap;gap:9px;position:relative;z-index:1}
+  .pill{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);
+    padding:6px 14px;border-radius:999px;font-size:13px;backdrop-filter:blur(4px)}
+
+  section.doc{padding:30px 52px;border-bottom:8px solid #eef1f4}
+  .rendered{max-width:880px}
+  .rendered h1{font-size:27px;color:var(--felt-dark);margin:8px 0 4px;padding-bottom:12px;
+    border-bottom:3px solid var(--felt);font-weight:800;line-height:1.35}
+  .rendered h2{font-size:21px;margin:36px 0 12px;padding-left:13px;border-left:5px solid var(--felt-light);
+    color:var(--ink);font-weight:700;line-height:1.4}
+  .rendered h3{font-size:16.5px;margin:24px 0 8px;color:var(--felt-dark);font-weight:700}
+  .rendered h4{font-size:15px;margin:16px 0 6px;color:var(--ink)}
+  .rendered p{margin:11px 0}
+  .rendered strong{color:var(--felt-dark);font-weight:700}
+  .rendered ul,.rendered ol{margin:11px 0;padding-left:24px}
+  .rendered li{margin:5px 0}
+  .rendered hr{border:none;border-top:1px dashed var(--line);margin:26px 0}
+  .rendered code{background:#eef3f0;color:#0a5a32;padding:1.5px 6px;border-radius:5px;
+    font-family:"SF Mono",Consolas,Menlo,monospace;font-size:.88em}
+
+  .rendered blockquote{margin:18px 0;background:linear-gradient(180deg,#f1f9f4,#eaf6ef);
+    border:1px solid #cfe9da;border-left:5px solid var(--felt);border-radius:12px;
+    padding:14px 20px;color:#143d29;box-shadow:var(--shadow)}
+  .rendered blockquote p{margin:6px 0}
+  .rendered blockquote strong{color:var(--felt)}
+
+  .tbl{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);background:#fff;margin:16px 0}
+  .rendered table{border-collapse:collapse;width:100%;font-size:13.6px;min-width:440px}
+  .rendered th,.rendered td{padding:10px 13px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  .rendered thead th{background:var(--felt-dark);color:#fff;font-weight:600;white-space:nowrap;position:sticky;top:0}
+  .rendered tbody tr:nth-child(even){background:#fafcfb}
+  .rendered tbody tr:hover{background:#f0f7f3}
+  .rendered td:first-child,.rendered th:first-child{white-space:nowrap}
+  .rendered table :is(td,th):nth-child(n+2){text-align:left}
+
+  .rendered pre{background:#0d1b14;color:#cfe9d8;padding:20px 22px;border-radius:var(--radius);
+    overflow-x:auto;box-shadow:var(--shadow);margin:18px 0}
+  .rendered pre code{background:none;color:#d3ecdd;padding:0;font-size:12.8px;line-height:1.55;
+    font-family:"SF Mono",Consolas,Menlo,monospace;white-space:pre}
+
+  .backtop{position:fixed;right:22px;bottom:22px;width:44px;height:44px;border-radius:50%;
+    background:var(--felt);color:#fff;display:none;align-items:center;justify-content:center;
+    box-shadow:var(--shadow);cursor:pointer;font-size:18px;z-index:40;border:none}
+  .backtop.show{display:flex}
+
+  @media(max-width:980px){
+    .wrap{grid-template-columns:1fr}
+    nav.side{position:static;height:auto;overflow:visible}
+    .navlist{display:flex;flex-wrap:wrap;gap:4px}
+    .navdoc{flex:1 1 auto}
+    .subs{display:none!important}
+    header.hero{padding:40px 22px}
+    section.doc{padding:26px 22px}
+  }
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div class="wrap">
+  <nav class="side">
+    <div class="brand">APEX<span>·</span>技術</div>
+    <div class="sub">技術棧與系統架構研究</div>
+    <a class="home" href="../">← 返回研究中心</a>
+    <div class="navlist" id="navlist"></div>
+  </nav>
+  <main>
+    <header class="hero">
+      <div class="eyebrow">APEX TECH STACK & ARCHITECTURE</div>
+      <h1>賽事系統技術棧與架構研究</h1>
+      <p>評估整個 APEX 系統該用什麼技術棧、怎麼分層、什麼時候做什麼。核心結論：<strong>Next.js + PostgreSQL 模組化單體（MVP 用 Supabase 加速）＋ 一個獨立的 Python 評分 worker</strong>；IoT/完整 SaaS 延到 P3，評分引擎以「matches in → ratings out」乾淨介面隔離以便持續升級。</p>
+      <div class="pills">
+        <span class="pill">模組化單體 ≠ 微服務</span>
+        <span class="pill">TS + Python 雙語</span>
+        <span class="pill">PostgreSQL 單一核心</span>
+        <span class="pill">評分引擎資料庫解耦</span>
+        <span class="pill">跨賽制 schema + 稽核</span>
+        <span class="pill">6 篇研究</span>
+      </div>
+    </header>
+<section class="doc" data-short="總覽"><script type="text/markdown" id="md-0">
+# APEX 技術棧與系統架構研究 · 總覽
+
+> 本研究線回答：**APEX 整個系統該用什麼技術棧、怎麼分層、什麼時候做什麼，才能用小團隊把賽事資料飛輪做出來？**
+>
+> 與其他研究線的關係：
+> - `/research/`：評分**演算法**（要算什麼）→ 本線決定它**用什麼技術跑、怎麼跟系統接**
+> - `/tournament-research/`：賽務**流程**（要做什麼）→ 本線決定它**用什麼軟體承載**
+> - `/saas-research/`：球館 SaaS（含一份 IoT 技術架構）→ 本線**統整並修正**它在整體中的定位與時程
+> - `/business-research/`、`/sponsorship-research/`：商業面 → 本線是給投資人看的**可行性與 build plan**
+
+---
+
+## 0. 一句話結論（先看這段）
+
+> **Next.js + PostgreSQL 模組化單體（MVP 用 Supabase 加速）＋ 一個獨立的 Python 評分 worker。**
+> IoT/完整 SaaS 那套重架構延到 P3；評分引擎用「matches in → ratings out」的乾淨資料庫介面隔離，以便持續升級模型。
+
+---
+
+## 1. 核心判斷：這不是一個系統，是五種性質不同的東西
+
+最常見、也最危險的錯誤，是想「用一套框架把全部做完」。APEX 各元件的技術本質差很大：
+
+| 元件 | 技術本質 | 性質類比 |
+|---|---|---|
+| 研究/行銷站（現有） | 靜態內容 | 文件網站 |
+| **Tournament OS** | 交易型 CRUD + 即時比分 | 訂位/電商後台 |
+| **Player Passport** | 公開、SEO、社群分享 | 內容/個人頁平台 |
+| **評分引擎** | 數值最佳化、批次+增量 | 資料科學/ML 服務 |
+| 資料管線與稽核 | 不可竄改、可追溯 | 金流帳本 |
+| SaaS/球館工具（P3） | IoT、邊緣、離線 | 物聯網系統 |
+
+**最關鍵的一條**：評分引擎跟其他全部不一樣。它是 Bradley–Terry / 階層貝葉斯 / partial pooling（見 `/research/06`），屬 **Python 數值生態**，不該硬塞進 CRUD 框架。
+
+---
+
+## 2. 本線文件索引
+
+| 編號 | 文件 | 回答的問題 |
+|------|------|-----------|
+| 01 | 系統元件與技術本質 | 系統由哪些性質不同的元件組成？為什麼不能一套做完？ |
+| 02 | 核心架構決策 | 單體還是微服務？為什麼刻意雙語（TS+Python）？邊界畫在哪？ |
+| 03 | 技術選型逐層建議 | 每一層具體用什麼？哪些自己做、哪些用託管？ |
+| 04 | 資料模型與賽果完整性 | schema 怎麼設計才不會之後痛苦遷移？怎麼保證資料可信？ |
+| 05 | 分階段技術路線圖與風險 | P0–P5 每階段只開哪些技術？最大技術風險與對策？ |
+
+---
+
+## 3. 誠實聲明與紀律
+
+- 本線是**架構建議**，不是已實作系統；目的是讓團隊與出資方在同一張技術地圖上對話。
+- 選型偏好**小團隊、低運維、可演進**，刻意避免過早微服務/K8s/自建輪子。
+- 任何「之後再優化」的延後項都明確標出階段（P0–P5），避免早期過度工程。
+- 與 `/saas-research/03` 的既有技術架構若有出入，以本線為整體統整版（差異見 `05`）。
+</script><div class="rendered" id="doc-0"></div></section>
+<section class="doc" data-short="系統元件與技術本質"><script type="text/markdown" id="md-1">
+# 01 · 系統元件與技術本質
+
+> 目標：把 APEX 拆成性質不同的元件，說清楚每個的技術需求，作為架構決策的基礎。
+> 結論：**評分引擎是唯一真正需要不同技術生態的元件**，其餘可共用一套 Web 技術。
+
+---
+
+## 1. 六個元件，三種技術性質
+
+```
+靜態內容        ──► 研究/行銷站（現有，GitHub Pages）
+交易 + 即時      ──► Tournament OS、Player Passport、資料管線（同一套 Web 技術）
+數值計算         ──► 評分引擎（獨立 Python 服務）
+（物聯網/邊緣）   ──► SaaS 球館工具（P3 才開，獨立子系統）
+```
+
+---
+
+## 2. 元件逐一拆解
+
+### 2.1 研究/行銷站（現有）
+
+- **現況**：markdown + `build.py` 生成單檔 HTML（marked.js + 部分 KaTeX），`build_site.py` 組裝成 portal，部署 GitHub Pages，前端軟密碼閘。
+- **判斷**：**維持現狀、與產品分離**。它是內容/對外站，不需要併進應用程式。零維運、零成本。
+
+### 2.2 Tournament OS（賽事作業系統）
+
+- **功能**：報名、繳費、抽籤/分組、檯次與時間、即時比分、賽果確認、種子、讓分、分級、賽季積分。
+- **技術需求**：交易一致性（報名/賽果不能錯亂）、多角色權限（賽務/裁判/選手）、**即時**（比分多端同步）。
+- **本質**：典型交易型後台 + 即時推播。**主流 Web 技術完全勝任。**
+
+### 2.3 Player Passport（玩家身分與履歷）
+
+- **功能**：玩家 ID、賽事履歷、對戰紀錄、評分、成就徽章、分享卡、隱私控制。
+- **技術需求**：**公開可被搜尋（SEO）**、**社群分享（OG 動態圖卡）**、高讀取量、隱私/同意控管（見 `04` 與 `/community-research/` Passport 設計）。
+- **本質**：公開內容/個人頁平台。**SSR/SSG 友善的框架是關鍵**（見 `03`）。
+
+### 2.4 評分引擎（差異化核心）⭐
+
+- **功能**：吃 completed certified match，輸出各賽制 rating + reliability；增量更新 + 週期性全域重算。
+- **技術需求**：數值最佳化（Bradley–Terry MLE / 階層貝葉斯 / partial pooling / empirical Bayes，見 `/research/06`、`/research/07`）。
+- **本質**：**資料科學/ML 工作負載**，屬 Python 生態（NumPy/SciPy/PyMC/Stan/cmdstanpy；或自寫 Bradley–Terry MLE）。
+- **與其他元件的關係**：透過資料庫**鬆耦合**——讀 matches、寫 ratings，不直接參與 Web 請求。
+
+> 這是整份評估最重要的一條：**評分引擎值得用不同語言/服務，因為它真的是不同問題。** 其餘元件則應盡量收斂同一套技術。
+
+### 2.5 資料管線與稽核
+
+- **功能**：賽果入庫、狀態（completed/walkover/no-show/disputed）、不可竄改 audit log、餵給評分引擎的乾淨資料視圖。
+- **技術需求**：append-only、可追溯、可重算（rating 要能用歷史重跑）。
+- **本質**：類金流帳本。**PostgreSQL + 稽核表** 即可，早期不需要事件溯源框架。
+
+### 2.6 SaaS 球館工具（P3 才開）
+
+- **功能**：賽事節點、計時、（後期）POS、IoT 燈控、離線續營。
+- **技術需求**：MQTT、邊緣閘道、離線同步（見 `/saas-research/03`）。
+- **本質**：物聯網子系統。**刻意延到 P3**，不讓它複雜化核心。
+
+---
+
+## 3. 「能不能一套做完？」逐項回答
+
+| 想法 | 可行嗎 | 結論 |
+|------|--------|------|
+| Tournament OS + Passport 同一套 Web 技術 | ✅ | **應該**，共用 DB 與框架 |
+| 評分引擎也塞進 Web 框架 | ⚠️ | **不建議**，數值生態不在那；用獨立 Python worker |
+| 一開始就做 IoT/SaaS | ❌ | 延到 P3，避免拖垮核心 |
+| 微服務拆很多個 | ❌ | 早期團隊小，模組化單體即可（見 `02`） |
+
+---
+
+## 4. 本篇結論
+
+1. APEX 由六個元件組成，但只有**三種技術性質**：靜態內容、交易+即時、數值計算（＋延後的 IoT）。
+2. **Tournament OS、Passport、資料管線可共用一套 Web 技術 + 一個 Postgres。**
+3. **評分引擎是唯一值得獨立技術生態（Python）的元件**，且應與系統鬆耦合。
+4. SaaS/IoT 延到 P3，研究站維持分離現狀。
+
+> 下一篇 `02`：把這個拆解落成具體架構決策——模組化單體、雙語邊界、資料庫解耦。
+</script><div class="rendered" id="doc-1"></div></section>
+<section class="doc" data-short="核心架構決策"><script type="text/markdown" id="md-2">
+# 02 · 核心架構決策
+
+> 目標：定出三個會長期影響成敗的決策——**單體 vs 微服務、雙語邊界、資料庫解耦**——並給出理由。
+
+---
+
+## 1. 決策一：模組化單體（Modular Monolith），不是微服務
+
+### 1.1 建議
+
+> **一個 Web 單體（內部分模組）+ 一個獨立的評分 worker。** 就這兩個部署單元。
+
+### 1.2 理由
+
+| 因素 | 微服務 | 模組化單體（建議） |
+|------|--------|------------------|
+| 團隊規模 | 需要多組人維運 | **小團隊友善** |
+| 流量 | 高並發才需要 | 撞球賽事流量不大 |
+| 開發速度 | 跨服務協調慢 | **快、好除錯** |
+| 部署/運維 | 複雜（K8s、服務網格） | **簡單** |
+| 演進 | 早期過度設計 | 之後真有瓶頸再拆 |
+
+> 模組化單體＝**邏輯上分模組（報名/賽程/比分/Passport/評分介面）、物理上一個應用**。
+> 之後若某模組真的成瓶頸，再獨立成服務——但那是 P4+ 規模問題，不是現在。
+
+---
+
+## 2. 決策二：刻意的「雙語」——TypeScript + Python
+
+### 2.1 建議
+
+> Web 全部 **TypeScript**；評分引擎 **Python**。**只有這兩種語言，不再增加。**
+
+### 2.2 為什麼值得雙語
+
+- 評分是 Bradley–Terry / 階層貝葉斯 / partial pooling（`/research/06`）——**Python 數值生態（NumPy/SciPy/PyMC/Stan）是唯一合理選擇**。用 TS 重寫這些統計模型是自找麻煩。
+- 但雙語有成本（兩套生態、CI、招聘），所以**紀律是：除了評分，其他一律不准再引入第三種語言**。
+
+### 2.3 雙語的整合方式
+
+- **不要** RPC 緊耦合。
+- **用資料庫當介面**：Web 寫 match，評分 worker 讀 match、算、寫回 ratings。
+- 觸發方式：排程（cron）＋ 事件（新賽果入庫後通知）兩種混用。
+
+---
+
+## 3. 決策三：評分引擎與系統「資料庫解耦」⭐
+
+### 3.1 架構圖
+
+```
+┌────────────────────────────────────────────┐
+│   Web App（TypeScript / Next.js 單體）        │
+│   報名·繳費·籤表·賽程·即時比分·Passport·後台   │
+└───────────────┬────────────────────────────┘
+                │ 讀寫
+                ▼
+        ┌─────────────────┐
+        │   PostgreSQL     │  ← 唯一真相來源
+        │  players         │
+        │  matches (+狀態)  │
+        │  ratings (+rel.)  │
+        │  audit_log       │
+        └─────────────────┘
+                ▲   ▲
+        讀 matches│   │寫 ratings
+                │   │
+        ┌───────┴───┴────────┐
+        │  評分 Worker (Python)│  ← 增量更新 + 週期全域重算
+        │  Bradley-Terry/Bayes │
+        └─────────────────────┘
+```
+
+### 3.2 為什麼這個邊界最重要
+
+- 評分模型會**一路升級**：P1 Elo-style 增量 → P2 進袋家族 partial pooling → 未來 WHR / 完整階層貝葉斯（`/research/06`、`/research/07`）。
+- 只要介面是「matches in → ratings out」，**升級模型完全不動 Web app**。
+- 也讓評分可**離線重算**（用歷史 match 重跑），這是資料可信與校準（log loss/Brier）的前提。
+
+### 3.3 介面契約（最小規格）
+
+| 評分 worker 讀 | 評分 worker 寫 |
+|---|---|
+| `matches`（雙方、各局/分、賽制、狀態、時間、賽事權重） | `ratings`（player×format：rating、reliability、樣本數、更新時間） |
+| 只取 `status = completed & certified` | `player.theta`（全域軸，partial pooling 後） |
+| `players`（現有 rating 作先驗） | `rating_history`（可追溯、可回放） |
+
+> **規則**：walkover / no-show / disputed **不直接餵 skill rating**（見 `04` 與記憶中的 P0 評分結論）。
+
+---
+
+## 4. 即時比分（Realtime）怎麼做
+
+| 方案 | 適用 | 建議 |
+|------|------|------|
+| Postgres `LISTEN/NOTIFY` + WebSocket | 中小規模、想少一個元件 | **P0–P2 夠用** |
+| 託管 Realtime（如 Supabase Realtime） | MVP 加速 | **P0 最快** |
+| 獨立訊息佇列（Redis pub/sub、Kafka） | 高並發 | **P4+ 才考慮** |
+
+> 撞球賽事同時連線數不大，**不要早期上 Kafka**。
+
+---
+
+## 5. 部署與運維（早期）
+
+- **託管 PaaS / Serverless 優先**（Vercel/Render/Railway/Fly.io，或 Supabase 託管）。
+- 評分 worker：排程容器 / serverless cron。
+- **不要 K8s**。一個 Web 部署 + 一個 worker + 一個託管 Postgres，就是早期全部。
+
+---
+
+## 6. 本篇結論
+
+1. **模組化單體 + 一個評分 worker**，不是微服務。
+2. **TS + Python 雙語**，只因評分是真不同問題；其餘一律不再加語言。
+3. 評分引擎與系統**用資料庫解耦**（matches in → ratings out），讓模型能持續升級且可離線重算。
+4. 即時比分早期用 LISTEN/NOTIFY 或託管 Realtime；不上 Kafka、不上 K8s。
+
+> 下一篇 `03`：把每一層的具體選型與 build-vs-buy 講清楚。
+</script><div class="rendered" id="doc-2"></div></section>
+<section class="doc" data-short="技術選型逐層建議"><script type="text/markdown" id="md-3">
+# 03 · 技術選型逐層建議
+
+> 目標：把每一層的具體選型講清楚，並劃出「自己做 vs 買/託管」的界線。
+> 偏好：小團隊、低運維、可演進。具體產品名為**建議**，非唯一解。
+
+---
+
+## 1. 逐層選型表
+
+| 層 | 建議 | 理由 / 備選 |
+|---|---|---|
+| **資料庫** | **PostgreSQL（單一核心）** | 交易一致性、RLS 多租戶、JSONB 放彈性賽果、可直接跑分析。早期一個 DB 打天下。備選：無 |
+| **Web 框架** | **Next.js (TypeScript)** | Passport 要 SSR/SSG + SEO + **OG 動態分享卡**；後台與 API 同一套。備選：Remix |
+| **API 風格** | REST + 少量 RPC（同單體內） | 早期不需要 GraphQL；對外資料服務（P4）再評估 |
+| **即時比分** | 託管 Realtime 或 Postgres LISTEN/NOTIFY + WS | 見 `02`；不上 Kafka |
+| **評分引擎** | **獨立 Python worker** | NumPy/SciPy/PyMC/Stan/cmdstanpy；對標 FargoRate 每日全域 MLE |
+| **身分/Auth** | 託管（Supabase Auth / Clerk / Auth0） | 「一人一 Passport、防分身」是核心，但別自建 |
+| **檔案/影像** | 物件儲存（S3 / Cloudflare R2 / Supabase Storage）+ CDN | 賽事照片/影片/分享卡 |
+| **影片轉碼/串流** | 託管（Mux / Cloudflare Stream） | 絕不自建 |
+| **金流/發票** | 在地 adapter（綠界/藍新…）+ 抽象層 | 與 `/saas-research/03` 一致：核心不綁特定金流 |
+| **Email/簡訊** | 託管（Resend/SendGrid/Twilio） | 報名通知、驗證 |
+| **贊助分析/報表** | 先 **Metabase + SQL** 查 Postgres | P1 不需要資料倉儲 |
+| **監控/錯誤** | 託管（Sentry + 平台內建 log） | 早期足夠 |
+| **行動端** | **PWA 優先**，React Native 延後 | 與 `/saas-research/03` 一致：免下載、掃碼即用 |
+
+---
+
+## 2. MVP 加速器：強烈建議用 Supabase 起步
+
+- **一次到位**：託管 PostgreSQL + Auth + Realtime + Storage + 邊緣函式。
+- 能把 P0 的 Tournament OS + Passport 開發時間**大幅縮短**（少接好幾個基礎元件）。
+- **鎖定風險可控**：底層就是標準 Postgres，未來要搬自管 Postgres 不難；Auth/Storage 也都有遷移路徑。
+- **評分 worker 不綁 Supabase**：它只連 Postgres，換託管商也不受影響。
+
+> 折衷判斷：早期速度 > 純淨度。先用 Supabase 把飛輪轉起來，規模化再評估自管。
+
+---
+
+## 3. Build vs Buy（小團隊紀律）
+
+| 自己做（差異化，護城河） | 買 / 託管（別碰） |
+|---|---|
+| **評分引擎**（跨賽制、partial pooling） | Auth、Email/簡訊 |
+| **賽事邏輯**（籤表/種子/讓分/分級） | 金流/發票（adapter） |
+| **Player Passport + 分享卡** | 影片轉碼/串流 |
+| **資料稽核與賽果完整性** | 物件儲存、CDN |
+| **跨賽制資料模型** | 監控/錯誤追蹤、託管 DB/Auth |
+
+> 原則：**只自己做「別人做不出、且是護城河」的東西**；其餘一律託管，把團隊帶寬留給差異化。
+
+---
+
+## 4. Player Passport 的分享卡（值得單獨點名）
+
+- 是 `/sponsorship-research/03` 的「贊助殺手鐧」載體——玩家分享成績時帶品牌。
+- 技術上＝**伺服器端動態 OG image 生成**（Next.js OG image / Satori 之類）：升段、爆冷勝、Top 8、最佳進步、球館冠軍各一張模板。
+- 這是 Next.js 勝過純 SPA 的具體理由之一（SSR + OG 圖原生支援）。
+
+---
+
+## 5. 與 `/research/` 評分演算法的接點
+
+| 演算法（research/） | 技術落點（本線） |
+|---|---|
+| 單場 Elo/Bradley-Terry 比分差更新（P1） | Python worker 增量更新 |
+| 進袋家族 partial pooling（P2） | Python worker 批次 + 階層模型 |
+| 全域最佳化 / WHR（未來） | Python 批次全域重算（排程） |
+| reliability / 校準（log loss、Brier） | worker 產出指標，存 Postgres，後台可視化 |
+
+---
+
+## 6. 本篇結論
+
+1. **PostgreSQL + Next.js(TS) + Python 評分 worker** 為三大支柱；其餘層盡量託管。
+2. **MVP 用 Supabase** 加速基礎元件，鎖定風險因底層是標準 Postgres 而可控。
+3. 嚴守 build-vs-buy：只自建差異化（評分/賽事邏輯/Passport/稽核/跨賽制模型）。
+4. 分享卡＝伺服器端動態 OG 圖，是 Next.js 的具體價值點，也是贊助載體。
+
+> 下一篇 `04`：資料模型與賽果完整性——一開始就要設對、否則之後痛苦遷移的地方。
+</script><div class="rendered" id="doc-3"></div></section>
+<section class="doc" data-short="資料模型與賽果完整性"><script type="text/markdown" id="md-4">
+# 04 · 資料模型與賽果完整性
+
+> 目標：點名兩個「現在不設對、之後改很痛」的決策——**跨賽制資料模型**與**賽果完整性/稽核**。
+> schema 為示意骨架，欄位待實作細化。
+
+---
+
+## 1. 鐵則一：資料模型第一天就支援跨賽制
+
+即使 P0 只辦 9 號球，schema 也必須能容納未來的 8/10 球、14-1、One Pocket、開倫——
+否則 P2 加賽制時要做痛苦的資料遷移。
+
+### 1.1 賽制與家族（對應 `/research/06` 的 θ + δ_f 結構）
+
+```
+formats(
+  id, name,                 -- 9-ball / 8-ball / 10-ball / 14-1 / one-pocket / 3-cushion / 4-ball
+  family,                   -- A 輪轉進袋 / B 策略進袋 / C 開倫
+  scoring_unit              -- rack / points / innings…（決定 score 換算，見 research/06 §6）
+)
+```
+
+### 1.2 玩家與評分（一人多賽制）
+
+```
+players(
+  id, display_name, real_name?, dob?, region,
+  privacy_settings(json),   -- 暱稱/實名/履歷公開範圍/未成年（見 §3）
+  theta_A?, theta_C?        -- 全域軸（partial pooling 後；P2+ 才有值）
+)
+
+ratings(
+  player_id, format_id,
+  rating, reliability,      -- 0–100%
+  sample_size, status,      -- NR / Provisional / Established
+  updated_at
+)
+```
+
+### 1.3 賽事與對局（rack-level 從第一天就留）
+
+```
+events(id, name, type, weight, region, start_at)        -- weight = 賽事等級權重(research/06 §3)
+matches(
+  id, event_id, format_id,
+  player_a, player_b,
+  race_to_a, race_to_b,     -- 讓分賽支援
+  status,                   -- completed / walkover / no-show / disputed / void
+  certified_bool,           -- 是否認證賽果（只有 true 才餵 rating）
+  start_at, end_at
+)
+racks(                       -- rack-level 結果，評分品質的關鍵
+  id, match_id, winner, seq,
+  meta(json)                -- 開球權、是否 fluke 等（依賽制）
+)
+```
+
+> 🔑 **rack-level 一開始就存**：P0 評分結論要求「rack-level Bradley-Terry/Fargo-like likelihood」，
+> 只存「比數 9:7」而不存逐局，之後無法回溯重算更細的模型。
+
+---
+
+## 2. 鐵則二：賽果完整性與稽核（rating 可信 + 贊助信任的根）
+
+### 2.1 為什麼這是地基不是裝飾
+
+- 評分可信度（給玩家）與資料可售性（給贊助/資料客戶）**都建立在「賽果沒被竄改、可追溯」**。
+- 一旦資料被質疑，護城河（`/business-research/05`）瞬間崩。
+
+### 2.2 設計
+
+```
+audit_log(                   -- append-only，不可 UPDATE/DELETE
+  id, actor, action, target_type, target_id,
+  before(json), after(json), ts
+)
+```
+
+- **append-only**：改比分、改賽果狀態、改價、認證/取消認證，全部留痕。
+- **賽果狀態機**：`pending → completed → certified`（或 `disputed → resolved`）；只有 `certified` 進評分。
+- **可重算（replayable）**：保留原始 racks 與 events，評分可用歷史完整重跑（校準、修 bug、升級模型都需要）。
+
+### 2.3 退賽/異常的分類（不可污染 skill rating）
+
+| 狀態 | 是否餵 skill rating | 處理 |
+|------|--------------------|------|
+| completed + certified | ✅ | 正常評分 |
+| walkover（對手棄賽） | ❌ | 記錄，不算技能 |
+| no-show（未到） | ❌（可影響 circuit points/紀律） | 記錄 |
+| disputed（爭議中） | ⛔ 暫不 | 解決後再定 |
+| void（作廢） | ❌ | 留痕但不計 |
+
+> 對應 P0 評分結論：completed certified match only；reliability 門檻；離群偵測；退賽分類。
+
+---
+
+## 3. 鐵則三：隱私與同意（Passport 不是公開成績單）
+
+對應 `/community-research/` 的 Passport 隱私設計與多 persona grill 結論：
+
+- **分級可見**：先顯示 level band，**精確 rating 可設為 private**（rating-anxiety UX）。
+- **同意式資料**：給贊助商的受眾輪廓必須**聚合、去識別**；個資不外流。
+- **未成年保護**：未成年玩家資料**不得用於商業導流**；需要監護同意流程。
+- **可攜/可刪**：data export / delete 從一開始就在 schema 與流程裡留位（法遵）。
+
+> 這些不是 P4 才加的功能——它們是 schema 與權限模型的一部分，**一開始就要設**。
+
+---
+
+## 4. 為什麼這三條「現在就要」
+
+| 鐵則 | 現在不做的後果 |
+|------|--------------|
+| 跨賽制 schema | P2 加賽制 → 大遷移、歷史資料無法跨賽制統一 |
+| rack-level + 稽核 | 無法回放重算、評分不可信、贊助/資料不可售 |
+| 隱私/同意內建 | 事後補 → 重構權限模型 + 法遵風險 |
+
+---
+
+## 5. 本篇結論
+
+1. **schema 第一天就支援跨賽制**（formats/family/scoring_unit + θ_A/θ_C + rack-level），即使 P0 只有 9 球。
+2. **賽果完整性是地基**：append-only audit、狀態機、可重算、退賽分類，只有 certified 進評分。
+3. **隱私/同意內建**：分級可見、去識別、未成年保護、可攜可刪。
+4. 這三條都是「現在設對、之後省下大遷移與法遵風險」的決策。
+
+> 下一篇 `05`：把以上落成分階段技術路線圖，並列出風險與對 `/saas-research/03` 的修正。
+</script><div class="rendered" id="doc-4"></div></section>
+<section class="doc" data-short="技術路線圖與風險"><script type="text/markdown" id="md-5">
+# 05 · 分階段技術路線圖與風險
+
+> 目標：把架構落成「每階段只開該開的技術」，並列出最大技術風險與對 `/saas-research/03` 的修正。
+> 階段對齊 `/research/06` 與 `/tournament-research/04` 的 P0–P5。
+
+---
+
+## 1. 分階段技術路線圖（每階段只開該開的）
+
+| 階段 | 必要技術 | **刻意不做 / 延後** |
+|------|---------|--------------------|
+| **P0 — 賽事資料飛輪** | Next.js + PostgreSQL（Supabase）+ Auth + 報名/籤表/賽果/Passport；rack-level schema；audit log | 即時比分可半手動；不碰 IoT；不碰跨賽制模型；不碰 POS |
+| **P1 — 9 球 rating 校準** | Python 評分 worker（9 球增量 + 批次）+ 校準指標（log loss/Brier）；分享卡 OG 圖 | 不公開精準排名（只 provisional/level band） |
+| **P2 — 進袋家族** | partial pooling 跨 9/8/10 球；WebSocket 即時比分；讓分 race-to 輸出 | 開倫先不進；不上訊息佇列 |
+| **P3 — 球館節點 / SaaS** | MQTT(EMQX) + Edge Gateway + 離線同步；認證球館工具包 | 才開始碰 IoT；仍不做完整 POS 紅海競爭 |
+| **P4 — 跨賽制 + 資料服務** | 開倫家族、全域重算/WHR；對外資料/評分 API；贊助數據看板 | 視規模再上資料倉儲 |
+| **P5 — 規模化** | 真有瓶頸再拆服務 / 上佇列 / 分庫 | 在此之前不微服務、不 K8s |
+
+> **核心紀律**：技術複雜度跟著飛輪轉動程度逐階段釋放，**不在 P0 預先承擔 P3 的架構**。
+
+---
+
+## 2. 兩個「現在就要定」的決策（重申）
+
+1. **跨賽制資料模型**（`04` §1）：P0 schema 就含 format/family/rack-level，避免 P2 大遷移。
+2. **賽果完整性與稽核**（`04` §2）：append-only audit + 狀態機 + 可重算，從第一筆賽果就在。
+
+這兩條不屬於任何「功能階段」，它們是**地基**，P0 就要鋪。
+
+---
+
+## 3. 對 `/saas-research/03` 既有技術架構的修正
+
+`/saas-research/03` 提了一套完整 SaaS 架構（NestJS/Go、Redis、MQTT、Edge Gateway、K8s）。在**整體系統**視角下修正如下：
+
+| saas-research/03 主張 | 整體統整後的定位 |
+|---|---|
+| NestJS/Go + Redis + K8s 為主架構 | 那是「**完整 SaaS（P3+）**」的架構；**P0 產品不該用**，P0＝Next.js + Postgres(+Supabase) |
+| MQTT + Edge Gateway + 燈控盒 | **保留為 P3 藍圖**，但不是第一版必備；別讓人以為 P0 要碰硬體 |
+| 多租戶 RLS | ✅ 正確且 P0 就可用（Postgres RLS） |
+| 在地支付/發票 adapter | ✅ 正確，核心不綁特定金流 |
+| 「斷網仍能營業」Edge 離線 | P3 球館工具的關鍵賣點，非 P0 |
+
+> 結論：`/saas-research/03` 沒有錯，但它描述的是**球館 SaaS 子系統（P3）**，不是 APEX **P0 產品**的架構。本線是整體統整版。
+
+---
+
+## 4. 技術風險旗標與對策
+
+| # | 風險 | 對策 |
+|---|------|------|
+| T1 | **雙語複雜度**（TS + Python 兩套生態） | 嚴守「除評分外不再加語言」；用 DB 解耦，不做緊耦合 RPC |
+| T2 | **評分引擎邊界被破壞**（混進 Web 請求） | 死守「matches in → ratings out」介面；評分只跑 worker/批次 |
+| T3 | **過早優化**（早期上 Kafka/微服務/K8s） | 路線圖明訂延到 P4/P5；P0 用託管 + 單體 |
+| T4 | **Supabase 鎖定** | 底層標準 Postgres + 預留遷移路徑；評分 worker 不綁 Supabase |
+| T5 | **賽果造假/稀疏 → 評分不可信** | 只 certified 進評分、reliability 門檻、離群偵測、可重算（`04`） |
+| T6 | **資料隱私/未成年/博彩合規** | 同意式蒐集、去識別、未成年保護、博彩相關先過法務（`04` §3、business-research/05） |
+| T7 | **schema 跨賽制沒設 → 大遷移** | P0 就鋪跨賽制 + rack-level schema |
+| T8 | **團隊帶寬** | build-vs-buy 紀律：只自建差異化，其餘託管 |
+
+---
+
+## 5. 最小可行技術清單（P0 真正要動手的）
+
+> 砍到最小，P0 只需要這些：
+
+- Next.js (TypeScript) 應用一座
+- PostgreSQL 一座（Supabase 託管，含 Auth/Storage/Realtime）
+- schema：players / formats / events / matches / racks / ratings / audit_log（跨賽制 + 稽核就位）
+- 報名 → 繳費（adapter）→ 籤表 → 賽果錄入 → Passport 個人頁
+- 監控（Sentry）
+
+評分 worker（Python）在 **P1** 才上線；P0 可先只記錄、不算分或只給最粗的 provisional。
+
+---
+
+## 6. 本篇結論
+
+1. 技術複雜度**跟著 P0–P5 逐階段釋放**，不在 P0 預先承擔 IoT/微服務。
+2. **跨賽制 schema 與賽果稽核是 P0 地基**，不屬任何功能階段。
+3. `/saas-research/03` 的重架構是**球館 SaaS（P3）**的定位，非 P0 產品架構——本線為整體統整版。
+4. 最大技術風險是雙語複雜度、評分邊界、過早優化、資料可信與合規——皆有對應紀律。
+5. **P0 動手清單砍到最小**：一個 Next.js + 一個 Supabase Postgres + 跨賽制/稽核 schema + 報名到 Passport 的主流程。
+
+---
+
+## 全線交叉索引
+
+- 評分演算法：`/research/06`、`/research/07`
+- 賽務流程與 P0 執行：`/tournament-research/04`
+- 球館 SaaS（P3 子系統）：`/saas-research/03`
+- 商業可行性與護城河：`/business-research/`
+- 贊助載體（分享卡/數據）：`/sponsorship-research/03`、`/sponsorship-research/04`
+- 系統元件/架構/選型/資料模型：本線 `01`–`04`
+</script><div class="rendered" id="doc-5"></div></section>
+  </main>
+</div>
+<button class="backtop" id="backtop" aria-label="back to top">↑</button>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script>
+(function(){
+  marked.setOptions({gfm:true, breaks:false});
+  document.querySelectorAll('script[type="text/markdown"]').forEach(function(s){
+    var i = s.id.split('-')[1];
+    var t = document.getElementById('doc-'+i);
+    try{ t.innerHTML = marked.parse(s.textContent.trim()); }
+    catch(e){ t.textContent = s.textContent; }
+  });
+
+  document.querySelectorAll('.rendered table').forEach(function(tb){
+    var w=document.createElement('div'); w.className='tbl';
+    tb.parentNode.insertBefore(w,tb); w.appendChild(tb);
+  });
+
+  var navlist=document.getElementById('navlist');
+  var secs=[].slice.call(document.querySelectorAll('section.doc'));
+  secs.forEach(function(sec,i){
+    sec.id='sec-'+i;
+    var h1=sec.querySelector('h1');
+    var grp=document.createElement('div'); grp.className='navdoc';
+    var a=document.createElement('a'); a.className='navtop'; a.href='#sec-'+i;
+    a.textContent=(sec.dataset.short||(h1?h1.textContent:('Doc '+i)));
+    grp.appendChild(a);
+    var subs=document.createElement('div'); subs.className='subs';
+    [].slice.call(sec.querySelectorAll('h2')).forEach(function(h2,j){
+      h2.id='sec-'+i+'-'+j; h2.style.scrollMarginTop='12px';
+      var sa=document.createElement('a'); sa.href='#sec-'+i+'-'+j;
+      sa.textContent=h2.textContent;
+      subs.appendChild(sa);
+    });
+    grp.appendChild(subs); navlist.appendChild(grp);
+    sec.style.scrollMarginTop='12px';
+  });
+  var navdocs=[].slice.call(document.querySelectorAll('.navdoc'));
+
+  var bar=document.getElementById('bar'), bt=document.getElementById('backtop');
+  function spy(){
+    var h=document.documentElement;
+    var max=h.scrollHeight-h.clientHeight;
+    bar.style.width=(max>0?(h.scrollTop/max*100):0)+'%';
+    bt.classList.toggle('show', h.scrollTop>600);
+    var ai=0;
+    secs.forEach(function(s,i){ if(s.getBoundingClientRect().top<=170) ai=i; });
+    navdocs.forEach(function(g,i){ g.classList.toggle('active', i===ai); });
+    var h2s=[].slice.call(secs[ai].querySelectorAll('h2'));
+    var hj=-1; h2s.forEach(function(x,j){ if(x.getBoundingClientRect().top<=170) hj=j; });
+    document.querySelectorAll('.subs a.on').forEach(function(a){a.classList.remove('on');});
+    var sub=navdocs[ai].querySelectorAll('.subs a');
+    if(hj>=0&&sub[hj]) sub[hj].classList.add('on');
+  }
+  bt.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});
+  window.addEventListener('scroll',spy,{passive:true});
+  window.addEventListener('resize',spy);
+  spy();
+})();
+</script>
+</body>
+</html>
