@@ -317,7 +317,7 @@
 > 一名選手會跨賽制挑戰，積分該如何整合計算？
 >
 > **開發策略修正**：評分研究是長期底層能力，但第一產品不應是「完整跨賽制模型」。
-> APEX 應先用台灣 9 號球賽事跑通**賽事資料飛輪**：辦賽 → 收賽果 → 產生玩家身份與評分 → 回到球館與社群 → 再擴成 SaaS。
+> APEX 應先用台灣 9 號球賽事跑通**賽事資料飛輪**：數位化賽事（既有＋自辦）→ 收賽果 → 產生玩家身份與評分 → 回到球館與社群 → 再擴成 SaaS。
 
 ---
 
@@ -389,7 +389,7 @@ WHR Coulom 2008、IRT/Multidimensional IRT、James-Stein 收縮、empirical Baye
 
 APEX 的評分引擎不應孤立開發。正確落地順序是：
 
-1. **P0：台灣 9 號球賽事 + Player Passport**——建立玩家 ID、報名、籤表、賽果、個人頁，先讓資料流動。
+1. **P0：白手套數位化既有台灣 9 號球賽事 + Player Passport**——帶瘦工具服務既有月賽/系列賽（LINE 報名、線上籤表、賽果、個人頁），先讓資料流動；季度自辦/共辦旗艦賽當品牌與贊助 demo（2026-07 拷問定案，見 `/tournament-research/04` §4.1）。
 2. **P1：9 號球單項 rating**——用真實賽果校準 Elo / Bradley-Terry style 的比分差更新與 reliability。
 3. **P2：進袋家族評分**——加入 8 / 10 號球，再做 pocket family 的 partial pooling。
 4. **P3：Tournament OS**——把種子、讓分、分級、賽季積分接進賽務流程。
@@ -1574,7 +1574,7 @@ $$\text{Circuit Points} = f(\text{名次}) \times w_{\text{賽事等級}} \times
 
 | 階段 | 產品焦點 | 評分焦點 | 成功指標 |
 |------|---------|---------|---------|
-| **P0 — 賽事資料飛輪** | 台灣 9 號球單站賽；玩家 ID、報名、籤表、賽果輸入、個人頁 | 只產生 9-ball provisional rating，不急著跨賽制 | 玩家願意查看/分享個人頁；賽果可穩定錄入 |
+| **P0 — 賽事資料飛輪** | **白手套數位化既有台灣 9 號球賽事**＋季度旗艦；玩家 ID、LINE 報名、籤表、賽果輸入、個人頁；方法論公開頁（引擎先跑 `/rating-test-data/`） | 只產生 9-ball provisional rating，不急著跨賽制 | 玩家願意查看/分享個人頁；既有主辦願意續用；賽果可穩定錄入 |
 | **P1 — 9 號球 rating 校準** | 連續多站 APEX 認證賽 | Elo / Bradley-Terry style 的比分差更新 + reliability；先不宣稱完整 Glicko-2 | rating 能合理產生種子與分級 |
 | **P2 — 進袋家族** | 加入 8 / 10 號球 | 9/8/10 pocket family partial pooling；輸出讓分 race-to 表 | 同一玩家跨進袋賽制的估分穩定 |
 | **P3 — Tournament OS** | 種子、讓分、分級、賽季積分榜、Player Passport 成就牆 | rating 直接消費於賽務，不只是展示數字 | 球館願意辦 APEX 認證賽 |

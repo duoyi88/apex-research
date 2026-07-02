@@ -686,7 +686,7 @@ audit_log(                   -- append-only，不可 UPDATE/DELETE
 
 | 階段 | 必要技術 | **刻意不做 / 延後** |
 |------|---------|--------------------|
-| **P0 — 賽事資料飛輪** | Next.js + PostgreSQL（Supabase）+ Auth + 報名/籤表/賽果/Passport；rack-level schema；audit log | 即時比分可半手動；不碰 IoT；不碰跨賽制模型；不碰 POS |
+| **P0 — 賽事資料飛輪（白手套服務既有賽事）** | Next.js + PostgreSQL（Supabase）+ **LINE Login** 報名 + 公開籤表/比分頁 + 賽果/Passport；rack-level schema；audit log | **不串金流**（匯款+人工對帳）；後台可醜可半手動；即時比分可半手動；不碰 IoT；不碰跨賽制模型；不碰 POS |
 | **P1 — 9 球 rating 校準** | Python 評分 worker（9 球增量 + 批次）+ 校準指標（log loss/Brier）；分享卡 OG 圖 | 不公開精準排名（只 provisional/level band） |
 | **P2 — 進袋家族** | partial pooling 跨 9/8/10 球；WebSocket 即時比分；讓分 race-to 輸出 | 開倫先不進；不上訊息佇列 |
 | **P3 — 球館節點 / SaaS** | MQTT(EMQX) + Edge Gateway + 離線同步；認證球館工具包 | 才開始碰 IoT；仍不做完整 POS 紅海競爭 |
@@ -743,11 +743,17 @@ audit_log(                   -- append-only，不可 UPDATE/DELETE
 
 - Next.js (TypeScript) 應用一座
 - PostgreSQL 一座（Supabase 託管，含 Auth/Storage/Realtime）
+- **LINE Login 報名**（台灣賽事組織的實際神經系統；第一次接觸就抓對身份，根治「先手動、後二次獲客」的轉換損耗）
 - schema：players / formats / events / matches / racks / ratings / audit_log（跨賽制 + 稽核就位）
-- 報名 → 繳費（adapter）→ 籤表 → 賽果錄入 → Passport 個人頁
+- 報名 → 繳費走**匯款＋人工對帳（P0 不串金流）**→ 公開網址籤表/比分頁 → 賽果錄入 → Passport 個人頁（**賽後 24 小時內交付**）
 - 監控（Sentry）
 
+> **P0 的第一批用戶是「既有賽事主辦」（白手套模式，見 `/tournament-research/04` §4.1）**：
+> 主辦端介面可以醜、可以半手動，選手看得到的（報名頁、籤表頁、Passport 頁）才要求質感——它們同時是贊助 demo 的畫面素材。
+> 現場必備紙本備援流程（斷網/當機時退回紙本籤表，賽後補錄），工具失效不能毀掉別人的比賽。
+
 評分 worker（Python）在 **P1** 才上線；P0 可先只記錄、不算分或只給最粗的 provisional。
+但**方法論公開頁與跑在 `/rating-test-data/`（CueScore 9,870 場）上的引擎展示可先行**——它是公信力資產，不依賴 P0 資料量。
 
 ---
 
@@ -757,7 +763,7 @@ audit_log(                   -- append-only，不可 UPDATE/DELETE
 2. **跨賽制 schema 與賽果稽核是 P0 地基**，不屬任何功能階段。
 3. `/saas-research/03` 的重架構是**球館 SaaS（P3）**的定位，非 P0 產品架構——本線為整體統整版。
 4. 最大技術風險是雙語複雜度、評分邊界、過早優化、資料可信與合規——皆有對應紀律。
-5. **P0 動手清單砍到最小**：一個 Next.js + 一個 Supabase Postgres + 跨賽制/稽核 schema + 報名到 Passport 的主流程。
+5. **P0 動手清單砍到最小**：一個 Next.js + 一個 Supabase Postgres + LINE Login + 跨賽制/稽核 schema + 報名到 Passport 的主流程（不串金流、後台可半手動），第一批用戶是白手套服務的既有賽事主辦。
 
 ---
 
